@@ -22,13 +22,13 @@ In order to benefit from best practices, SDMX-CSV is based on the rules defined 
 - How to handle / request column headers;
 - What is the default character set, etc.
 
-##	CSV for data exchanges
-The CSV flavour for data exchanges is very close to the principles adopted for the flat representation of the SDMX-ML 2.1 Structure Specific Data format:
+##	SDMX-CSV for data exchanges
+The SDMX-CSV representation optimised for data exchanges is very close to the principles adopted for the flat representation of the SDMX-ML 2.1 Structure Specific Data format:
 -	Concept and code IDs are used, instead of the (user-friendlier but more verbose) concept and code names;
 -	The TIME_PERIOD is returned as-is.
 
-##	CSV for pivot tables
-The CSV flavour for pivot tables is considered user-friendly but is also more verbose:
+##	SDMX-CSV for pivot tables
+The SDMX-CSV representation optimised for pivot tables contains more information for the end user and is therefore more verbose:
 -	Concept names, as well as both code IDs and names are used;
 -	In order to ease comparisons, the TIME_PERIOD values are converted to the most granular ISO8601 representation possible (depending on the frequency) and take into account the moment in time when the values were collected (which, at the ECB is typically either at the beginning, middle or end of the reporting period). To give an example, if annual and daily data are available in the CSV output and the annual data were collected at the end of the period, the formatted value for 2014 becomes 2014-12-31.
 
