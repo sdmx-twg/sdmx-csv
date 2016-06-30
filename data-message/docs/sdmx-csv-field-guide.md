@@ -6,7 +6,11 @@ SDMX-CSV integrates with other specifications, i.e.:
 - The RFC 4180 specification (determined column number, comma separated)
 
 #	Design principles
-As mentioned above, the ECB offers two different CSV flavours, both catering to the needs of different target audiences: One is optimised for data exchanges and is similar, in principles, to the “flat” representation of the SDMX-ML 2.1 Structure Specific Data format. The other one is optimised for creating pivot tables in spreadsheets applications such as Microsoft Excel, and is therefore more user-friendly. Both are based on the RFC 4180, which defines a common format and MIME Type for CSV files. 
+SDMX-CSV is flexible enough in its representation, to support the needs of different target audiences. Multiple representations are supported, such as for example:
+- A representation optimised for data exchanges and similar, in principles, to the “flat” representation of the SDMX-ML 2.1 Structure Specific Data format. 
+- A representation optimised for creating pivot tables in spreadsheets applications such as Microsoft Excel. 
+
+All representations offered by SDMX-CSV are based on the RFC 4180, which defines a common format and MIME Type for CSV files. 
 
 ##	RFC 4180: A common format for CSV files
 In order to benefit from best practices, the ECB has decided to base its two CSV flavours on the rules defined in the RFC 4180. It is advised to read the (very short) RFC for a full list of requirements but, in a nutshell, the RFC defines rules such as:
