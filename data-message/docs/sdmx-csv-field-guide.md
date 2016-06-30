@@ -2,7 +2,7 @@
 SDMX-CSV Data Message is a SDMX data exchange format based on the RFC4180. CSV is a widely used standardised simple format used to exchange data and is supported by many tools.
 
 SDMX-CSV integrates with other specifications, i.e.: 
-- The SDMX RESTful specification (e.g. content negotiation with mime-type to get SDMX-CSV and its flavor, specific formats for responses, language selection)
+- The SDMX RESTful specification (e.g. content negotiation with mime-type to get SDMX-CSV representations, specific formats for responses, language selection)
 - The RFC 4180 specification (determined column number, comma separated)
 
 #	Design principles
