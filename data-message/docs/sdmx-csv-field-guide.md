@@ -23,6 +23,10 @@ In order to benefit from best practices, SDMX-CSV is based on the rules defined 
 
 #	Design principles
 
+-	The possibility to add a column with the series key (including the dataflow id as prefix);
+-	Whenever appropriate (e.g. in case the updatedAfter or includeHistory parameters of the SDMX RESTful API were used by the client), additional columns such as the ones for the action flags (Delete, Replace, etc.) or the validFrom and validTo “technical” attributes can be displayed;
+It is also worth noting that, in case the SDMX RESTful 2.1 web service implementation supports a streaming mechanism, columns for all attributes defined in the DSD are always present in the output, regardless of whether these attributes are used (unless of course the client makes use of the SDMX 2.1 RESTful detail parameter to disable to display of attributes).
+
 # Examples
 
 ##	SDMX-CSV for data exchanges
@@ -34,9 +38,3 @@ The SDMX-CSV representation optimised for data exchanges is very close to the pr
 The SDMX-CSV representation optimised for pivot tables contains more information for the end user and is therefore more verbose:
 -	Concept names, as well as both code IDs and names are used;
 -	In order to ease comparisons, the TIME_PERIOD values are converted to the most granular ISO8601 representation possible (depending on the frequency) and take into account the moment in time when the values were collected (which, at the ECB is typically either at the beginning, middle or end of the reporting period). To give an example, if annual and daily data are available in the CSV output and the annual data were collected at the end of the period, the formatted value for 2014 becomes 2014-12-31.
-
-##	Additional commonalities between the 2 formats
-In addition to the rules defined in the RFC 4180 and to the dimensions and attributes defined in the DSDs, both SDMX-CSV flavours offer:
--	The possibility to add a column with the series key (including the dataflow id as prefix);
--	Whenever appropriate (e.g. in case the updatedAfter or includeHistory parameters of the SDMX RESTful API were used by the client), additional columns such as the ones for the action flags (Delete, Replace, etc.) or the validFrom and validTo “technical” attributes can be displayed;
-It is also worth noting that, in case the SDMX RESTful 2.1 web service implementation supports a streaming mechanism, columns for all attributes defined in the DSD are always present in the output, regardless of whether these attributes are used (unless of course the client makes use of the SDMX 2.1 RESTful detail parameter to disable to display of attributes).
