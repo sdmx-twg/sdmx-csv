@@ -5,7 +5,6 @@ SDMX-CSV integrates with other specifications, i.e.:
 - The SDMX RESTful specification (e.g. content negotiation with mime-type to get SDMX-CSV representations, specific formats for responses, language selection)
 - The RFC 4180 specification (determined column number, comma separated)
 
-#	Design principles
 SDMX-CSV is flexible enough in its representation, to support the needs of different target audiences. Multiple representations are supported:
 - A representation optimised for data exchanges and similar, in principles, to the “flat” representation of the SDMX-ML 2.1 Structure Specific Data format. 
 - A representation optimised for creating pivot tables in spreadsheets applications such as Microsoft Excel. 
@@ -21,6 +20,10 @@ In order to benefit from best practices, SDMX-CSV is based on the rules defined 
 - Which mime type should be used;
 - How to handle / request column headers;
 - What is the default character set, etc.
+
+#	Design principles
+
+
 
 ##	SDMX-CSV for data exchanges
 The SDMX-CSV representation optimised for data exchanges is very close to the principles adopted for the flat representation of the SDMX-ML 2.1 Structure Specific Data format:
