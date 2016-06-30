@@ -28,9 +28,13 @@ In order to benefit from best practices, SDMX-CSV is based on the rules defined 
 It is also worth noting that, in case the SDMX RESTful 2.1 web service implementation supports a streaming mechanism, columns for all attributes defined in the DSD are always present in the output, regardless of whether these attributes are used (unless of course the client makes use of the SDMX 2.1 RESTful detail parameter to disable to display of attributes).
 
 (November 2015 decisions)
+
 No SDMX header => Format more suitable for Dissemination
+
 Follows CSV RFC (4180)
+
 Comma Separator but recommended for implementers to provide the answer according to locale of the client (which means that in some cases the semi-colon ‘;’ is acceptable as separator)
+
 application/vnd.sdmx.data+csv;version=1.0.0,header=true|false,display=id|name|both,dataflow=false|true,serieskey=false|true,periodFormatting=false|true
 - Header (default=true): first row is the header containing the IDs of the components as they are defined in the DSD. If the parameter is false then the order defined in the DSD should be followed (display option applies here)).
 - First dimensions, then the measure and then the attributes (all following the order defined in the DSD).
@@ -41,6 +45,7 @@ application/vnd.sdmx.data+csv;version=1.0.0,header=true|false,display=id|name|bo
 - Dataflow (default=false) if this is true we have a reference to the dataflow (full reference -> Agency + ID + Version) This column will be added at the end of the file and the ID is DATAFLOW
 - Serieskey (default=false) if this is true a new column is added at the end of the file (after DATAFLOW if this was added) containing the serieskey.
 - periodFormatting (default=false) - In order to ease comparisons, the TIME_PERIOD values are converted to the most granular ISO8601 representation possible (depending on the frequency) and take into account the moment in time when the values were collected (which, at the ECB is typically either at the beginning, middle or end of the reporting period). To give an example, if annual and daily data are available in the CSV output and the annual data were collected at the end of the period, the formatted value for 2014 becomes 2014-12-31.
+
 Options up to the implementers to implement them.
 
 # Examples
