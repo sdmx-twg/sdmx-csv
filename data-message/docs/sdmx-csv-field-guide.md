@@ -1,4 +1,9 @@
 # Introduction
+SDMX-CSV Data Message is a SDMX data exchange format based on the RFC4180. CSV is a widely used standardised simple format used to exchange data and is supported by many tools.
+
+SDMX-CSV integrates with other specifications, i.e.: 
+- The SDMX RESTful specification (e.g. content negotiation with mime-type to get SDMX-CSV and its flavor, specific formats for responses, language selection)
+- The RFC 4180 specification (determined column number, comma separated)
 
 #	Design principles
 As mentioned above, the ECB offers two different CSV flavours, both catering to the needs of different target audiences: One is optimised for data exchanges and is similar, in principles, to the “flat” representation of the SDMX-ML 2.1 Structure Specific Data format. The other one is optimised for creating pivot tables in spreadsheets applications such as Microsoft Excel, and is therefore more user-friendly. Both are based on the RFC 4180, which defines a common format and MIME Type for CSV files. 
