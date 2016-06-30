@@ -5,3 +5,4 @@ Open Issues
 - decision about the link to the dsd
 - for the representation for pivot tables: decide on how to combine id and names into one field, or to put them in seperate fields
 - naming: "csv for pivot tables" is too restrictive?
+- additional columns are allowed: do we need additional rules for that?
