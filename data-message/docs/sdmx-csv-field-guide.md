@@ -23,7 +23,7 @@ In order to benefit from best practices, SDMX-CSV is based on the rules defined 
 
 #	Design principles
 
-
+# Examples
 
 ##	SDMX-CSV for data exchanges
 The SDMX-CSV representation optimised for data exchanges is very close to the principles adopted for the flat representation of the SDMX-ML 2.1 Structure Specific Data format:
