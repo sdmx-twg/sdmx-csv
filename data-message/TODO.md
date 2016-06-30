@@ -7,3 +7,4 @@ Open Issues
 - naming: "csv for pivot tables" is too restrictive?
 - additional columns are allowed: do we need additional rules for that?
 - the results in case of the different REST parameters 
+- How to deal with multiple measures
