@@ -25,11 +25,11 @@ In order to benefit from best practices, SDMX-CSV is based on the rules defined 
 
 - There is no SDMX-specific header. The SDMX-CSV format is mainly intended and more suitable for purposes of public dissemination.
 - Columns: First dimensions (always one column per dimension), then the measure (one column) and then the attributes (always one column per attribute) all following the order defined in the DSD.
--	Possibility (see options below) to add:
-  - a column at the end with the reference to the dataflow
-  - a column at the end with the series key
-  - any other custom columns as required.
--	Whenever appropriate (e.g. in case the updatedAfter or includeHistory parameters of the SDMX RESTful API were used by the client), additional columns such as the ones for the action flags (Delete, Replace, etc.) or the validFrom and validTo “technical” attributes can be displayed.
+- Possibility (see options below) to add:
+  - A column at the end with the reference to the dataflow.
+  - A column at the end with the series key.
+  - Any other custom columns as required.
+- Whenever appropriate (e.g. in case the updatedAfter or includeHistory parameters of the SDMX RESTful API were used by the client), additional columns such as the ones for the action flags (Delete, Replace, etc.) or the validFrom and validTo “technical” attributes can be displayed.
 - It is also worth noting that, in case the SDMX RESTful 2.1 web service implementation supports a streaming mechanism, columns for all attributes defined in the DSD are always present in the output, regardless of whether these attributes are used (unless of course the client makes use of the SDMX 2.1 RESTful detail parameter to disable the display of attributes).
 - Comma Separator for columns is used by default, but it is recommended for implementers to provide the response according to the locale of the client (which means that in some cases the semi-colon ‘;’ is acceptable as separator).
 - HTTP content negotiation (HTTP Accept header) with mime-type:
@@ -37,16 +37,16 @@ In order to benefit from best practices, SDMX-CSV is based on the rules defined 
 
 #	Optional parameters
 
-- Header (default=present): If the parameter value is "present" then the first row is the header containing the IDs (and/or labels) of the components as they are defined in the DSD. If the parameter value is "absent" then the order defined in the DSD should be followed (display option applies here). The parameter values are defined in the RFC 4180 standard.
-- Display (default=id): 
-  - If the option is ID, displays only the id of the dimension or attribute (for coded components).
-  - If it is NAME it displays the label according to the language specified in the http negotiation.
-  - If it is BOTH then display concatenated id and label (according to the language specified in the http negotiation) matching this regular expression ID(:| |-)( )[0..1]LABEL
-- Dataflow (default=false): If this is true a column is added at the end of the file showing in all rows the full reference to the dataflow (Agency + ID + Version). The corresponding header row contains the term DATAFLOW as ID.
-- Serieskey (default=false): If this is true a column is added at the end of the file (after DATAFLOW if this was added) containing the serieskey prefixed with the dataflow id. The corresponding header row contains the term SERIESKEY.
-- periodFormatting (default=false) - In order to ease comparisons, the TIME_PERIOD values are converted to the most granular ISO8601 representation possible (depending on the frequency) and take into account the moment in time when the values were collected (which, e.g. at the ECB, is typically either at the beginning, middle or end of the reporting period). As an example, if annual and daily data are available in the CSV output and the annual data were collected at the end of the period, the formatted value for 2014 becomes 2014-12-31.
+- Header (present|absent; default=present): If the parameter value is "present" then the first row is the header containing the IDs (and/or labels) of the components as they are defined in the DSD. If the parameter value is "absent" then the order defined in the DSD should be followed (display option applies here). The parameter values are defined in the RFC 4180 standard.
+- Display (id|name|both; default=id): This parameter applies to all Nameable SDMX Artefacts contained in the header and the body of the message. 
+  - If the parameter value is "id" then only the id of the Artefacts is displayed.
+  - If the parameter value is "name" then only the name of the Artefacts (according to the language specified in the http negotiation) is displayed.
+  - If the parameter value is "both" then the concatenated id and name of the Artefacts (according to the language specified in the http negotiation) matching this regular expression "ID(:| |-)( )[0..1]NAME" are displayed.
+- Dataflow (present|absent; default=absent): If the parameter value is "present" then a column is added at the end of the file showing in all rows the full reference to the dataflow (Agency + ID + Version). The corresponding header row contains the term DATAFLOW as ID.
+- Serieskey (present|absent; default=absent): If the parameter value is "present" then a column is added at the end of the file (after DATAFLOW if this was added) containing the serieskey prefixed with the dataflow id matching this regular expression: "ID(:| |-)( )[0..1]SERIESKEY". The corresponding header row contains the term SERIESKEY.
+- periodFormatting (true|false; default=false) - If the parameter value is "true" then the TIME_PERIOD values are converted to the most granular ISO8601 representation possible (depending on the frequency) and take into account the moment in time when the values were collected (which, e.g. at the ECB, is typically either at the beginning, middle or end of the reporting period). This eases comparisons and business analysis such as in pivot tables. As an example, if annual and daily data are available in the message and the annual data were collected at the end of the reporting period, the formatted value for 2014 becomes 2014-12-31. If the parameter is "false" then the TIME-PERIOD values are displayed in an appropriate SDMX TIME_PERIOD format.
 
-Support of above options is not required by implementers.
+Support of above parameters is not required by implementers.
 
 # Examples
 
