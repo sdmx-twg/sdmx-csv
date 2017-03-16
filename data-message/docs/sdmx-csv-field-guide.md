@@ -24,12 +24,14 @@ In order to benefit from best practices, SDMX-CSV is based on the rules defined 
 #	Design principles
 
 - There is no SDMX-specific header. The SDMX-CSV format is mainly intended and more suitable for purposes of public dissemination.
-- Columns: First dimensions (always one column per dimension), then the measure (one column) and then the attributes (always one column per attribute) all following the order defined in the DSD.
+- Columns: First all dimensions (always one column per dimension), then the measure (one column) and then one or more attributes (always one column per attribute) ideally all following the order defined in the DSD.
 - Possibility (see options below) to add:
   - A column at the end with the reference to the dataflow.
   - A column at the end with the series key.
-  - Any other custom columns as required.
-- Whenever appropriate (e.g. in case the updatedAfter or includeHistory parameters of the SDMX RESTful API were used by the client), additional columns such as the ones for the action flags (Delete, Replace, etc.) or the validFrom and validTo “technical” attributes can be displayed.
+  - A column with the sender.
+  - A column with the prepared date.
+  - Any other custom columns as required (see options below).
+- Whenever appropriate, any additional columns can be displayed.
 - It is also worth noting that, in case the SDMX RESTful 2.1 web service implementation supports a streaming mechanism, columns for all attributes defined in the DSD are always present in the output, regardless of whether these attributes are used (unless of course the client makes use of the SDMX 2.1 RESTful detail parameter to disable the display of attributes).
 - Comma Separator for columns is used by default, but it is recommended for implementers to provide the response according to the locale of the client (which means that in some cases the semi-colon ‘;’ is acceptable as separator).
 - HTTP content negotiation (HTTP Accept header) with mime-type:
@@ -37,33 +39,38 @@ In order to benefit from best practices, SDMX-CSV is based on the rules defined 
 
 #	Optional parameters
 
-- Header (present|absent; default=present): If the parameter value is "present" then the first row is the header containing the IDs (and/or labels) of the components as they are defined in the DSD. If the parameter value is "absent" then the order defined in the DSD should be followed (display option applies here). The parameter values are defined in the RFC 4180 standard.
-- Display (id|name|both; default=id): This parameter applies to all Nameable SDMX Artefacts contained in the header and the body of the message. 
+- header (present|absent; default=present): If the parameter value is "present" then the first row is the header containing the IDs (and/or labels) of the components as they are defined in the DSD. If the parameter value is "absent" then in addition to all dimensions and the measure columns also all attribute columns need to be included in the message in the order defined in the DSD. The parameter values are defined in the RFC 4180 standard.
+- display (id|name|both; default=id): This parameter applies to all Nameable SDMX Artefacts contained in the header and the body of the message: 
   - If the parameter value is "id" then only the id of the Artefacts is displayed.
   - If the parameter value is "name" then only the name of the Artefacts (according to the language specified in the http negotiation) is displayed.
-  - If the parameter value is "both" then the concatenated id and name of the Artefacts (according to the language specified in the http negotiation) matching this regular expression "ID(:| |-)( )[0..1]NAME" are displayed.
-- Dataflow (present|absent; default=absent): If the parameter value is "present" then a column is added at the end of the file showing in all rows the full reference to the dataflow (Agency + ID + Version). The corresponding header row contains the term DATAFLOW as ID.
-- Serieskey (present|absent; default=absent): If the parameter value is "present" then a column is added at the end of the file (after DATAFLOW if this was added) containing the serieskey prefixed with the dataflow id matching this regular expression: "ID(:| |-)( )[0..1]SERIESKEY". The corresponding header row contains the term SERIESKEY.
-- periodFormatting (true|false; default=false) - If the parameter value is "true" then the TIME_PERIOD values are converted to the most granular ISO8601 representation possible (depending on the frequency) and take into account the moment in time when the values were collected (which, e.g. at the ECB, is typically either at the beginning, middle or end of the reporting period). This eases comparisons and business analysis such as in pivot tables. As an example, if annual and daily data are available in the message and the annual data were collected at the end of the reporting period, the formatted value for 2014 becomes 2014-12-31. If the parameter is "false" then the TIME-PERIOD values are displayed in an appropriate SDMX TIME_PERIOD format.
+  - If the parameter value is "both" then the concatenated id and name of the Artefacts (according to the language specified in the http negotiation) separated by ": " are displayed. Note that the character combination ": " could also be part of the Artefact name and could therefore occur several times within the concatenated string.
+- timePeriodFormat (true|false; default=false) - If the parameter value is "true" then the TIME_PERIOD values are converted to the most granular ISO8601 representation possible (depending on the frequency) and take into account the moment in time when the values were collected (which, e.g. at the ECB, is typically either at the beginning, middle or end of the reporting period). This eases comparisons and business analysis such as in pivot tables. As an example, if annual and daily data are available in the message and the annual data were collected at the end of the reporting period, the formatted value for 2014 becomes 2014-12-31. If the parameter is "false" then the TIME-PERIOD values are displayed in an appropriate SDMX TIME_PERIOD format.
+- additionalColumns (all|none|{dataflow, serieskey, sender, prepared}; default=none): While the parameter options "all" and "none" cannot be combined with any other option, all other options can be combined but need to be separated by "+", e.g. "additionalColumns=dataflow+serieskey". Note that any additionalColumns parameter option other than "none" is incompatible with the option "header=absent". If additional columns are included then the header row must also be included.
+  - If the parameter value is "all" then all currently implemented additional columns are added to the message.
+  - If the parameter value is "none" then only columns for dimensions, measure and attributes are included in the message.
+  - If the parameter value contains "dataflow" then a column is added as last column showing in all rows the full reference to the dataflow (same as URN). The corresponding header row contains the term DATAFLOW as ID. 
+  - If the parameter value contains "serieskey" then a column is added as last column (after DATAFLOW if this was added) containing the serieskey, a string compliant with the KeyType defined in the SDMX WADL, e.g. "D.USD.EUR.SP00.A". The corresponding header row contains the term SERIESKEY.
+  - If the parameter value contains "sender" then a column is added after the attribute columns showing in all rows the sender ID.  The corresponding header row contains the term SENDER.
+  - If the parameter value contains "prepared" then a column is added after the attribute columns showing in all rows the prepared date.  The corresponding header row contains the term PREPARED.
 
 Support of above parameters is not required by implementers.
 
 # Examples
 
-#### application/vnd.sdmx.data+csv;version=1.0.0,header=true,display=id,dataflow=true,serieskey=false,periodFormatting=false
+#### application/vnd.sdmx.data+csv;version=1.0.0,header=true,display=id,dataflow=true,serieskey=false,timePeriodFormat=false
 
     DIM_1,DIM_2,DIM_3,VALUE,ATTR_1,ATTR_2,ATTR_3,EMBARGO_DATE,DATAFLOW
     A,B,2014-01,12.4,N,Y,"Normal, special and other values",2016-12-14T15:00:00,ESTAT+NA_MAIN+1.6
     A,B,2014-02,10.8,Y,Y,"Normal, special and other values",2016-12-15T15:00:00,ESTAT+NA_MAIN+1.6
 
-#### application/vnd.sdmx.data+csv;version=1.0.0,header=true,display=label,dataflow=false,serieskey=true,periodFormatting=false
+#### application/vnd.sdmx.data+csv;version=1.0.0,header=true,display=label,dataflow=false,serieskey=true,timePeriodFormat=false
 [French locale]
 
     Dimension 1;Dimension 2;Dimension 3;VALUE;Attribute 1;Attribute 2;Attribute 3;Embargo date;SERIESKEY
     Value A;Value B;2014-01;12,4;No;Yes;Normal, special and other values;2016-12-14T15:00:00;NA_MAIN.A.B.C
     Value A;Value B;2014-02;10,8;Yes;Yes;Normal, special and other values;2016-12-14T15:00:00;NA_MAIN.A.B.D
 
-#### application/vnd.sdmx.data+csv;version=1.0.0,header=true,display=both,dataflow=false,serieskey=false,periodFormatting=true
+#### application/vnd.sdmx.data+csv;version=1.0.0,header=true,display=both,dataflow=false,serieskey=false,timePeriodFormat=true
 [for pivot table]
 
     DIM_1: Dimension 1,DIM_2: Dimension 2,DIM_3: Dimension 3,VALUE;ATTR_1: Attribute 1,ATTR_2: Attribute 2,ATTR_3: Attribute 3,EMBARGO_DATE: Embargo date
