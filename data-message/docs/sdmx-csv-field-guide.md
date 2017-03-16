@@ -24,21 +24,21 @@ In order to benefit from best practices, SDMX-CSV is based on the rules defined 
 #	Design principles
 
 - There is no SDMX-specific header. The SDMX-CSV format is mainly intended and more suitable for purposes of public dissemination.
-- Columns: First dimensions (always one column per dimension), then the measure (one column) and then the attributes (always one column per attribute all following the order defined in the DSD).
+- Columns: First dimensions (always one column per dimension), then the measure (one column) and then the attributes (always one column per attribute) all following the order defined in the DSD.
 -	Possibility (see options below) to add:
   - a column at the end with the reference to the dataflow
   - a column at the end with the series key
   - any other custom columns as required.
 -	Whenever appropriate (e.g. in case the updatedAfter or includeHistory parameters of the SDMX RESTful API were used by the client), additional columns such as the ones for the action flags (Delete, Replace, etc.) or the validFrom and validTo “technical” attributes can be displayed.
-- It is also worth noting that, in case the SDMX RESTful 2.1 web service implementation supports a streaming mechanism, columns for all attributes defined in the DSD are always present in the output, regardless of whether these attributes are used (unless of course the client makes use of the SDMX 2.1 RESTful detail parameter to disable to display of attributes).
+- It is also worth noting that, in case the SDMX RESTful 2.1 web service implementation supports a streaming mechanism, columns for all attributes defined in the DSD are always present in the output, regardless of whether these attributes are used (unless of course the client makes use of the SDMX 2.1 RESTful detail parameter to disable the display of attributes).
 - Comma Separator for columns is used by default, but it is recommended for implementers to provide the response according to the locale of the client (which means that in some cases the semi-colon ‘;’ is acceptable as separator).
 - HTTP content negotiation (HTTP Accept header) with mime-type:
     application/vnd.sdmx.data+csv;version=1.0.0,header=true|false,display=id|name|both,dataflow=false|true,serieskey=false|true,periodFormatting=false|true
 
 #	Optional parameters
 
-- Header (default=true): If this is true the first row is the header containing the IDs (and/or labels) of the components as they are defined in the DSD. If the parameter is false then the order defined in the DSD should be followed (display option applies here). 
-- Display(default=id): 
+- Header (default=present): If the parameter value is "present" then the first row is the header containing the IDs (and/or labels) of the components as they are defined in the DSD. If the parameter value is "absent" then the order defined in the DSD should be followed (display option applies here). The parameter values are defined in the RFC 4180 standard.
+- Display (default=id): 
   - If the option is ID, displays only the id of the dimension or attribute (for coded components).
   - If it is NAME it displays the label according to the language specified in the http negotiation.
   - If it is BOTH then display concatenated id and label (according to the language specified in the http negotiation) matching this regular expression ID(:| |-)( )[0..1]LABEL
