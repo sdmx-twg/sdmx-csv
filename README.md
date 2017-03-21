@@ -1,1 +1,8 @@
-This repository is used for maintaining the **draft proposal** for SDMX-CSV message specifications. **This is an early draft and there are no guarantee it will lead to a future SDMX-CSV specification.**
+# Overview
+
+This repository is used for maintaining the SDMX-CSV data message specifications.
+
+This includes:
+
+- Normative documentation and samples for the SDMX-CSV data message.
+- [Wiki](https://github.com/sdmx-twg/sdmx-csv/wiki) for additional information
