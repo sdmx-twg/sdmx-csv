@@ -34,7 +34,7 @@ In order to benefit from best practices, SDMX-CSV is based on the rules defined 
 - It is also worth noting that, in case the SDMX RESTful 2.1 web service implementation supports a streaming mechanism, columns for all attributes defined in the DSD are always present in the output, regardless of whether these attributes are used (unless of course the client makes use of the SDMX 2.1 RESTful detail parameter to disable the display of attributes).
 - Comma Separator for columns is used by default, but it is recommended for implementers to provide the response according to the locale of the client (which means that in some cases the semi-colon ‘;’ is acceptable as separator).
 - HTTP content negotiation (HTTP Accept header) with mime-type:
-    application/vnd.sdmx.data+csv;version=1.0.0,header=present|absent,display=id|name|both,additionalColumns=none|all|{[+]dataflow, [+]serieskey, [+]sender, [+]prepared, [+]custom},periodFormatting=false|true
+    application/vnd.sdmx.data+csv;version=1.0.0,header=present|absent,display=id|name|both,additionalColumns=none|all|{[+]dataflow, [+]serieskey, [+]sender, [+]prepared, [+]custom},timePeriodFormat=sdmx|iso8601
 
 #	Optional parameters
 
@@ -43,7 +43,7 @@ In order to benefit from best practices, SDMX-CSV is based on the rules defined 
   - If the parameter value is "id" then only the id of the Artefacts is displayed.
   - If the parameter value is "name" then only the name of the Artefacts (according to the language specified in the http negotiation) is displayed.
   - If the parameter value is "both" then the concatenated id and name of the Artefacts (according to the language specified in the http negotiation) separated by ": " are displayed. Note that the character combination ": " could also be part of the Artefact name and could therefore occur several times within the concatenated string.
-- timePeriodFormat (false|true; default=false) - If the parameter value is "true" then the TIME_PERIOD values are converted to the most granular ISO8601 representation possible (depending on the frequency) and take into account the moment in time when the values were collected (which, e.g. at the ECB, is typically either at the beginning, middle or end of the reporting period). This eases comparisons and business analysis such as in pivot tables. As an example, if annual and daily data are available in the message and the annual data were collected at the end of the reporting period, the formatted value for 2014 becomes 2014-12-31. If the parameter is "false" then the TIME-PERIOD values are displayed in an appropriate SDMX TIME_PERIOD format.
+- timePeriodFormat (sdmx|iso8601; default=sdmx) - If the parameter value is "iso8601" then the TIME_PERIOD values are converted to the most granular ISO8601 representation possible (depending on the frequency) and take into account the moment in time when the values were collected (which, e.g. at the ECB, is typically either at the beginning, middle or end of the reporting period). This eases comparisons and business analysis such as in pivot tables. As an example, if annual and daily data are available in the message and the annual data were collected at the end of the reporting period, the formatted value for 2014 becomes 2014-12-31. If the parameter is "sdmx" then the TIME-PERIOD values are displayed in an appropriate SDMX TIME_PERIOD format.
 - additionalColumns (none|all|{dataflow, serieskey, sender, prepared}; default=none): While the parameter options "all" and "none" cannot be combined with any other option, all other options can be combined but need to be separated by "+", e.g. "additionalColumns=dataflow+serieskey". Note that any additionalColumns parameter option other than "none" is incompatible with the option "header=absent". If additional columns are included then the header row must also be included.
   - If the parameter value is "all" then all currently implemented additional columns are added to the message.
   - If the parameter value is "none" then only columns for dimensions, measure and attributes are included in the message.
@@ -66,7 +66,7 @@ Support of above parameters is not required by implementers.
 The following parameter settings are automatically applied:
 - header=present
 - display=id
-- timePeriodFormat=false
+- timePeriodFormat=sdmx
 
 #### application/vnd.sdmx.data+csv;version=1.0.0,display=name,additionalColumns=serieskey+custom
 [French locale]
@@ -77,9 +77,9 @@ The following parameter settings are automatically applied:
 
 The following parameter settings are automatically applied:
 - header=present
-- timePeriodFormat=false
+- timePeriodFormat=sdmx
 
-#### application/vnd.sdmx.data+csv;version=1.0.0,display=both,additionalColumns=none,timePeriodFormat=true
+#### application/vnd.sdmx.data+csv;version=1.0.0,display=both,additionalColumns=none,timePeriodFormat=iso8601
 [for pivot table]
 
     DIM_1: Dimension 1,DIM_2: Dimension 2,DIM_3: Dimension 3,VALUE;ATTR_1: Attribute 1,ATTR_2: Attribute 2,ATTR_3: Attribute 3
@@ -97,4 +97,4 @@ The following parameter settings are automatically applied:
 The following parameter settings are automatically applied:
 - display=id
 - additionalColumns=none
-- timePeriodFormat=false
+- timePeriodFormat=sdmx
