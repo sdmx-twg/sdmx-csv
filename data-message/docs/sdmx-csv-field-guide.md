@@ -28,13 +28,11 @@ In order to benefit from best practices, SDMX-CSV is based on the rules defined 
 - Possibility (see options below) to add:
   - A column at the end with the reference to the dataflow.
   - A column at the end with the series key.
-  - A column with the sender.
-  - A column with the prepared date.
-  - Any other custom columns as required (see options below).
+  - Any other custom columns as required, e.g. sender, prepared, etc.
 - It is also worth noting that, in case the SDMX RESTful 2.1 web service implementation supports a streaming mechanism, columns for all attributes defined in the DSD are always present in the output, regardless of whether these attributes are used (unless of course the client makes use of the SDMX 2.1 RESTful detail parameter to disable the display of attributes).
 - Comma Separator for columns is used by default, but it is recommended for implementers to provide the response according to the locale of the client (which means that in some cases the semi-colon ‘;’ is acceptable as separator).
 - HTTP content negotiation (HTTP Accept header) with mime-type:
-    application/vnd.sdmx.data+csv;version=1.0.0,header=present|absent,display=id|name|both,additionalColumns=none|all|{[+]dataflow, [+]serieskey, [+]sender, [+]prepared, [+]custom},timePeriodFormat=sdmx|iso8601
+    application/vnd.sdmx.data+csv;version=1.0.0,header=present|absent,display=id|name|both,additionalColumns=none|all|{[+]dataflow, [+]serieskey, [+]custom},timePeriodFormat=sdmx|iso8601
 
 #	Optional parameters
 
@@ -44,14 +42,12 @@ In order to benefit from best practices, SDMX-CSV is based on the rules defined 
   - If the parameter value is "name" then only the name of the Artefacts (according to the language specified in the http negotiation) is displayed.
   - If the parameter value is "both" then the concatenated id and name of the Artefacts (according to the language specified in the http negotiation) separated by ": " are displayed. Note that the character combination ": " could also be part of the Artefact name and could therefore occur several times within the concatenated string.
 - timePeriodFormat (sdmx|iso8601; default=sdmx) - If the parameter value is "iso8601" then the TIME_PERIOD values are converted to the most granular ISO8601 representation possible (depending on the frequency) and take into account the moment in time when the values were collected (which, e.g. at the ECB, is typically either at the beginning, middle or end of the reporting period). This eases comparisons and business analysis such as in pivot tables. As an example, if annual and daily data are available in the message and the annual data were collected at the end of the reporting period, the formatted value for 2014 becomes 2014-12-31. If the parameter is "sdmx" then the TIME-PERIOD values are displayed in an appropriate SDMX TIME_PERIOD format.
-- additionalColumns (none|all|{dataflow, serieskey, sender, prepared}; default=none): While the parameter options "all" and "none" cannot be combined with any other option, all other options can be combined but need to be separated by "+", e.g. "additionalColumns=dataflow+serieskey". Note that any additionalColumns parameter option other than "none" is incompatible with the option "header=absent". If additional columns are included then the header row must also be included.
+- additionalColumns (none|all|{[+]dataflow, [+]serieskey, [+]custom}; default=none): While the parameter options "all" and "none" cannot be combined with any other option, all other options can be combined but need to be separated by "+", e.g. "additionalColumns=dataflow+serieskey". Note that any additionalColumns parameter option other than "none" is incompatible with the option "header=absent". If additional columns are included then the header row must also be included.
   - If the parameter value is "all" then all currently implemented additional columns are added to the message.
   - If the parameter value is "none" then only columns for dimensions, measure and attributes are included in the message.
   - If the parameter value contains "dataflow" then a column is added as last column showing in all rows the full reference to the dataflow (same as URN). The corresponding header row contains the term DATAFLOW as ID. 
   - If the parameter value contains "serieskey" then a column is added as last column (after DATAFLOW if this was added) containing the serieskey, a string compliant with the KeyType defined in the SDMX WADL, e.g. "D.USD.EUR.SP00.A". The corresponding header row contains the term SERIESKEY.
-  - If the parameter value contains "sender" then a column is added after the attribute columns showing in all rows the sender ID.  The corresponding header row contains the term SENDER.
-  - If the parameter value contains "prepared" then a column is added after the attribute columns showing in all rows the prepared date.  The corresponding header row contains the term PREPARED.
-  - If the parameter value contains "custom" then any custom columns can be added after the attribute columns showing in all rows the custom information. The corresponding header row must contain a term that makes the column unique and identifiable.
+  - If the parameter value contains "custom" then any custom columns, e.g. sender, prepared, etc., can be added after the attribute columns showing in all rows the custom information. The corresponding header row must contain a term that makes the column unique and identifiable.
 
 Support of above parameters is not required by implementers.
 
