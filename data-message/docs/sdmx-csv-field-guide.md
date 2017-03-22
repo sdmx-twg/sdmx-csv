@@ -60,8 +60,8 @@ Support of above parameters is not required by implementers.
 #### application/vnd.sdmx.data+csv;version=1.0.0,additionalColumns=dataflow+serieskey+custom
 
     DIM_1,DIM_2,DIM_3,VALUE,ATTR_1,ATTR_2,ATTR_3,EMBARGO_DATE,DATAFLOW,SERIESKEY
-    A,B,2014-01,12.4,N,Y,"Normal, special and other values",2016-12-14T15:00:00,ESTAT+NA_MAIN+1.6,A.B.C
-    A,B,2014-02,10.8,Y,Y,"Normal, special and other values",2016-12-15T15:00:00,ESTAT+NA_MAIN+1.6,A.B.D
+    A,B,2014-01,12.4,N,Y,"Normal, special and other values",2016-12-14T15:00:00,ESTAT+NA_MAIN+1.6,A.B
+    A,B,2014-02,10.8,Y,Y,"Normal, special and other values",2016-12-15T15:00:00,ESTAT+NA_MAIN+1.6,A.B
 
 The following parameter settings are automatically applied:
 - header=present
@@ -72,8 +72,8 @@ The following parameter settings are automatically applied:
 [French locale]
 
     Dimension 1;Dimension 2;Dimension 3;VALUE;Attribute 1;Attribute 2;Attribute 3;Embargo date;SERIESKEY
-    Value A;Value B;2014-01;12,4;No;Yes;Normal, special and other values;2016-12-14T15:00:00;A.B.C
-    Value A;Value B;2014-02;10,8;Yes;Yes;Normal, special and other values;2016-12-14T15:00:00;A.B.D
+    Value A;Value B;2014-01;12,4;No;Yes;Normal, special and other values;2016-12-14T15:00:00;A.B
+    Value A;Value B;2014-02;10,8;Yes;Yes;Normal, special and other values;2016-12-14T15:00:00;A.B
 
 The following parameter settings are automatically applied:
 - header=present
