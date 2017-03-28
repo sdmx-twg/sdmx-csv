@@ -24,11 +24,21 @@ In order to benefit from best practices, SDMX-CSV is based on the rules defined 
 #	Design principles
 
 - There is no SDMX-specific header. The SDMX-CSV format is designed for the purpose of general public dissemination of statistical data.
-- Columns: There must be one column per dimension, one column for the measure and one column per attribute. All dimensions defined in the Data Structure Definition (DSD) are to be included. In case the SDMX RESTful 2.1 web service implementation supports a streaming mechanism, columns for all attributes defined in the DSD are present in the output, regardless of whether these attributes are used.
-- Possibility (see options below) to add:
-  - A column at the end with the reference to the dataflow.
-  - A column at the end with the series key.
-  - Any other custom columns as required, e.g. sender, prepared, etc.
+- After an optional header row, each row contains the information related to one specific observation. 
+- Columns: There must be one column for the dataflow, one column per dimension, one column for the measure and one column per attribute. All dimensions defined in the related Data Structure Definition (DSD) are to be included. In case the SDMX RESTful 2.1 web service implementation supports a streaming mechanism, columns for all attributes defined in the DSD are present in the output, regardless of whether these attributes are used. Implementers have the possibility to add any other custom columns as required, e.g. serieskey, sender, prepared, etc.
+- Column headers (first row, if present - see option below): 
+  - For the dataflow column, always contains the term *DATAFLOW*.
+  - For a dimension column, contains the dimension's ID, name or both (see option below).
+  - For the measure column, always contains the term *VALUE*.
+  - For an attribute column, contains the attribute's ID, name or both (see option below).
+  - For any custom column, contains any custom but unique term.
+- Column content (all rows after header):
+  - For the dataflow column, always contains the full reference to the *dataflow* (same as URN).
+  - For a dimension column, contains the ID, name or both (see option below) of the observation's code in the corresponding dimension.
+  - For the measure column, contains the value of the observation.
+  - For a coded attribute column, contains the ID, name or both (see option below) of the corresponding observation's attribute.
+  - For a uncoded attribute column, contains the value of the corresponding observation's attribute.
+  - For any custom column, contains any custom content.
 - Comma Separator for columns is used by default, but it is recommended for implementers to provide the response according to the locale of the client (which means that in some cases the semi-colon ‘;’ is acceptable as separator).
 - HTTP content negotiation (HTTP Accept header) with mime-type (see [RFC 7231](https://tools.ietf.org/html/rfc7231#section-5.3.2)):
 
@@ -44,15 +54,9 @@ Optional parameters can be added to the HTTP Accept header. They need to be sepa
   - If the parameter value is `id` then only the id of the Artefacts is displayed.
   - If the parameter value is `name` then only the name of the Artefacts (according to the language specified in the http negotiation) is displayed.
   - If the parameter value is `both` then the concatenated id and name of the Artefacts (according to the language specified in the http negotiation) separated by `": "` are displayed. Note that the character combination `": "` could also be part of the Artefact name and could therefore occur several times within the concatenated string.
-- timePeriodFormat (sdmx|iso8601; default=sdmx):
-  - If the parameter value is `sdmx` then the *TIME-PERIOD* values are displayed in an appropriate SDMX *TIME_PERIOD* format.
-  - If the parameter value is `iso8601` then the *TIME_PERIOD* values are converted to the most granular [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) representation possible (depending on the frequency) and take into account the moment in time when the values were collected (which, e.g. at the ECB, is typically either at the beginning, middle or end of the reporting period). This eases comparisons and business analysis such as in pivot tables. As an example, if annual and daily data are available in the message and the annual data were collected at the end of the reporting period, the formatted value for 2014 becomes 2014-12-31. 
-- additionalColumns (none|all|{[+]dataflow, [+]serieskey, [+]custom}; default=none): While the parameter options `all` and `none` cannot be combined with any other option, all other options can be combined but need to be separated by `"+"`, e.g. `"additionalColumns=dataflow+serieskey"`. Note that any additionalColumns parameter option other than `none` is incompatible with the option `header=absent`. If additional columns are included then the header row must also be included.
-  - If the parameter value is `none` then only columns for dimensions, measure and attributes are included in the message.
-  - If the parameter value is `all` then all currently implemented additional columns are added to the message.
-  - If the parameter value contains `dataflow` then a column is added as last column showing in all rows the full reference to the *dataflow* (same as URN). The corresponding header row contains the term *DATAFLOW* as ID. 
-  - If the parameter value contains `serieskey` then a column is added as last column (after *DATAFLOW* if this was added) containing the *serieskey*, a string compliant with the KeyType defined in the SDMX WADL, e.g. `"D.USD.EUR.SP00.A"`. The corresponding header row contains the term *SERIESKEY*.
-  - If the parameter value contains `custom` then any custom columns, e.g. *sender*, *prepared*, etc., can be added after the attribute columns showing in all rows the custom information. The corresponding header row must contain a term that makes the column unique and identifiable.
+- timeFormat (original|normalized; default=original):
+  - If the parameter value is `original` then the *TIME-PERIOD* values are displayed in the SDMX *TIME_PERIOD* format as originally recorded.
+  - If the parameter value is `normalized` then the *TIME_PERIOD* values are converted to the most granular [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) representation taking into account the highest frequency of the data in the message and the moment in time when the lower-frequency values were collected (which, e.g. at the ECB, is typically either at the beginning, middle or end of the reporting period). This eases comparisons and business analysis of multi-frequency values, e.g. in pivot tables. As an example, if annual and daily data are available in the message and the annual data were collected at the end of the reporting period, the formatted value for annual data for 2014 becomes 2014-12-31.
 
 Support of above parameters is not required by implementers.
 
@@ -60,54 +64,46 @@ Support of above parameters is not required by implementers.
 
 #### application/vnd.sdmx.data+csv; version=1.0.0
 
-    DIM_1,DIM_2,DIM_3,VALUE,ATTR_2,ATTR_3,ATTR_1
-    A,B,2014-01,12.4,Y,"Normal, special and other values",N
-    A,B,2014-02,10.8,Y,"Normal, special and other values",Y
+    DATAFLOW,DIM_1,DIM_2,DIM_3,VALUE,ATTR_2,ATTR_3,ATTR_1,SERIESKEY
+    ESTAT+NA_MAIN+1.6,A,B,2014-01,12.4,Y,"Normal, special and other values",N,A.B
+    ESTAT+NA_MAIN+1.6,A,B,2014-02,10.8,Y,"Normal, special and other values",Y,A.B
 
 The following default parameter settings are automatically applied:
 - header=present
 - display=id
-- timePeriodFormat=sdmx
-- additionalColumns=none
+- timeFormat=original
+- *SERIESKEY* is a custom column.
 
 #### application/vnd.sdmx.data+csv; version=1.0.0; header=absent
 
-    A,B,2014-01,12.4,N,Y,"Normal, special and other values"
-    A,B,2014-02,10.8,Y,Y,"Normal, special and other values"
+    ESTAT+NA_MAIN+1.6,A,B,2014-01,12.4,N,Y,"Normal, special and other values"
+    ESTAT+NA_MAIN+1.6,A,B,2014-02,10.8,Y,Y,"Normal, special and other values"
 
 The following default parameter settings are automatically applied:
 - display=id
-- additionalColumns=none
-- timePeriodFormat=sdmx
+- timeFormat=original
+- Custom columns are suppressed.
+- Dimension and attribute columns are ordered in order defined in related Data Structure Definition.
 
-#### application/vnd.sdmx.data+csv; version=1.0.0; additionalColumns=dataflow+serieskey+custom
+#### application/vnd.sdmx.data+csv; version=1.0.0; display=name
+[French locale, French language]
 
-    DIM_1,DIM_2,DIM_3,VALUE,ATTR_1,ATTR_2,ATTR_3,EMBARGO_DATE,DATAFLOW,SERIESKEY
-    A,B,2014-01,12.4,N,Y,"Normal, special and other values",2016-12-14T15:00:00,ESTAT+NA_MAIN+1.6,A.B
-    A,B,2014-02,10.8,Y,Y,"Normal, special and other values",2016-12-15T15:00:00,ESTAT+NA_MAIN+1.6,A.B
-
-The following default parameter settings are automatically applied:
-- header=present
-- display=id
-- timePeriodFormat=sdmx
-
-#### application/vnd.sdmx.data+csv; version=1.0.0; display=name; additionalColumns=serieskey+custom
-[French locale]
-
-    Dimension 1;Dimension 2;Dimension 3;VALUE;Attribute 1;Attribute 2;Attribute 3;Embargo date;SERIESKEY
-    Value A;Value B;2014-01;12,4;No;Yes;Normal, special and other values;2016-12-14T15:00:00;A.B
-    Value A;Value B;2014-02;10,8;Yes;Yes;Normal, special and other values;2016-12-14T15:00:00;A.B
+    DATAFLOW;Dimension 1;Dimension 2;Dimension 3;VALUE;Attribut 2;Attribut 3;Attribut 1;SERIESKEY
+    ESTAT+NA_MAIN+1.6;Valeur A;Valeur B;2014-01;12,4;Oui;Normal, special and other values;Non;A.B
+    ESTAT+NA_MAIN+1.6;Valeur A;Valeur B;2014-02;10,8;Oui;Normal, special and other values;Oui;A.B
 
 The following default parameter settings are automatically applied:
 - header=present
-- timePeriodFormat=sdmx
+- timeFormat=original
+- *SERIESKEY* is a custom column.
 
-#### application/vnd.sdmx.data+csv; version=1.0.0; display=both; additionalColumns=none; timePeriodFormat=iso8601
+#### application/vnd.sdmx.data+csv; version=1.0.0; display=both; timeFormat=normalized
 [for pivot table]
 
-    DIM_1: Dimension 1,DIM_2: Dimension 2,DIM_3: Dimension 3,VALUE;ATTR_1: Attribute 1,ATTR_2: Attribute 2,ATTR_3: Attribute 3
-    A: Value A,B: Value B,2014-01-01,12.4,N: No,Y: Yes,"Normal, special and other values"
-    A: Value A,B: Value B,2014-02-01,10.8,Y: Yes,Y: Yes,"Normal, special and other values"
+    DATAFLOW,DIM_1: Dimension 1,DIM_2: Dimension 2,DIM_3: Dimension 3,VALUE,ATTR_2: Attribute 2,ATTR_3: Attribute 3,ATTR_1: Attribute 1,SERIESKEY
+    ESTAT+NA_MAIN+1.6,A: Value A,B: Value B,2014-01-01,12.4,Y: Yes,"Normal, special and other values",N: No,A.B
+    ESTAT+NA_MAIN+1.6,A: Value A,B: Value B,2014-02-01,10.8,Y: Yes,"Normal, special and other values",Y: Yes,A.B
 
 The following default parameter settings are automatically applied:
 - header=present
+- *SERIESKEY* is a custom column.
