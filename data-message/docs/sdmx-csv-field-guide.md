@@ -1,4 +1,5 @@
 # Introduction
+
 SDMX-CSV Data Message is an SDMX data exchange format based on the [RFC 4180](https://tools.ietf.org/html/rfc4180). CSV is a widely used standardised and simple format to exchange data supported by many tools.
 
 SDMX-CSV integrates with other specifications, i.e.: 
@@ -9,10 +10,8 @@ SDMX-CSV is flexible enough in its representation to support the needs of differ
 - A representation optimised for public data dissemination and similar, and for usage in common statistical software
 - A representation optimised for creating pivot tables in spreadsheets applications
 
-All representations offered by SDMX-CSV are based on the RFC 4180, which defines a common format and MIME Type for CSV files. 
-
 ##	RFC 4180: A common format for CSV files
-In order to benefit from best practices, SDMX-CSV is based on the rules defined in the [RFC 4180](https://tools.ietf.org/html/rfc4180). It is advised to read the (very short) RFC for a full list of requirements but, in a nutshell, the RFC defines rules such as:
+In order to benefit from best practices, SDMX-CSV is based on the rules defined in the [RFC 4180](https://tools.ietf.org/html/rfc4180), which defines a common format and MIME Type for CSV files. It is advised to read the (very short) RFC for a full list of requirements but, in a nutshell, the RFC defines rules such as:
 - How the CSV file should be structured (the RFC specifies that all records must have an identical structure, like when using an SDMX "flat" representation for data);
 - When double-quotes should be used and how to escape them when needed;
 - How spaces should be handled;
@@ -29,7 +28,7 @@ In order to benefit from best practices, SDMX-CSV is based on the rules defined 
 - Column headers (first row, if present - see option below): 
   - For the dataflow column, always contains the term *DATAFLOW*.
   - For a dimension column, contains the dimension's ID, name or both (see option below).
-  - For the measure column, always contains the term *VALUE*.
+  - For the measure column, always contains the term *OBS_VALUE*.
   - For an attribute column, contains the attribute's ID, name or both (see option below).
   - For any custom column, contains any custom but unique term.
 - Column content (all rows after header):
@@ -64,7 +63,7 @@ Support of above parameters is not required by implementers.
 
 #### application/vnd.sdmx.data+csv; version=1.0.0
 
-    DATAFLOW,DIM_1,DIM_2,DIM_3,VALUE,ATTR_2,ATTR_3,ATTR_1,SERIESKEY
+    DATAFLOW,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_2,ATTR_3,ATTR_1,SERIESKEY
     ESTAT+NA_MAIN+1.6,A,B,2014-01,12.4,Y,"Normal, special and other values",N,A.B
     ESTAT+NA_MAIN+1.6,A,B,2014-02,10.8,Y,"Normal, special and other values",Y,A.B
 
@@ -88,7 +87,7 @@ The following default parameter settings are automatically applied:
 #### application/vnd.sdmx.data+csv; version=1.0.0; display=name
 [French locale, French language]
 
-    DATAFLOW;Dimension 1;Dimension 2;Dimension 3;VALUE;Attribut 2;Attribut 3;Attribut 1;SERIESKEY
+    DATAFLOW;Dimension 1;Dimension 2;Dimension 3;OBS_VALUE;Attribut 2;Attribut 3;Attribut 1;SERIESKEY
     ESTAT+NA_MAIN+1.6;Valeur A;Valeur B;2014-01;12,4;Oui;Normal, special and other values;Non;A.B
     ESTAT+NA_MAIN+1.6;Valeur A;Valeur B;2014-02;10,8;Oui;Normal, special and other values;Oui;A.B
 
@@ -100,7 +99,7 @@ The following default parameter settings are automatically applied:
 #### application/vnd.sdmx.data+csv; version=1.0.0; display=both; timeFormat=normalized
 [for pivot table]
 
-    DATAFLOW,DIM_1: Dimension 1,DIM_2: Dimension 2,DIM_3: Dimension 3,VALUE,ATTR_2: Attribute 2,ATTR_3: Attribute 3,ATTR_1: Attribute 1,SERIESKEY
+    DATAFLOW,DIM_1: Dimension 1,DIM_2: Dimension 2,DIM_3: Dimension 3,OBS_VALUE,ATTR_2: Attribute 2,ATTR_3: Attribute 3,ATTR_1: Attribute 1,SERIESKEY
     ESTAT+NA_MAIN+1.6,A: Value A,B: Value B,2014-01-01,12.4,Y: Yes,"Normal, special and other values",N: No,A.B
     ESTAT+NA_MAIN+1.6,A: Value A,B: Value B,2014-02-01,10.8,Y: Yes,"Normal, special and other values",Y: Yes,A.B
 
