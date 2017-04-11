@@ -26,17 +26,17 @@ In order to benefit from best practices, SDMX-CSV is based on the rules defined 
 - After an optional header row, each row contains the information related to one specific observation. 
 - Columns: There must be one column for the dataflow, one column per dimension, one column for the measure and one column per attribute. All dimensions defined in the related Data Structure Definition (DSD) are to be included. In case the SDMX RESTful 2.1 web service implementation supports a streaming mechanism, columns for all attributes defined in the DSD are present in the output, regardless of whether these attributes are used. Implementers have the possibility to add any other custom columns as required, e.g. serieskey, sender, prepared, etc.
 - Column headers (first row, if present - see option below): 
-  - For the dataflow column, always contains the term *DATAFLOW*.
-  - For a dimension column, contains the dimension's ID, name or both (see option below).
-  - For the measure column, always contains the term *OBS_VALUE*.
-  - For an attribute column, contains the attribute's ID, name or both (see option below).
-  - For any custom column, contains any custom but unique term.
+  - For the dataflow column, always is the term *DATAFLOW*.
+  - For a dimension column, is the dimension's ID, name or both (see option below).
+  - For the measure column, always is the term *OBS_VALUE*.
+  - For an attribute column, is the attribute's ID, name or both (see option below).
+  - For any custom column, is any custom but unique term.
 - Column content (all rows after header):
-  - For the dataflow column, always contains the full reference to the *dataflow* (same as URN).
-  - For a dimension column, contains the ID, name or both (see option below) of the observation's code in the corresponding dimension.
-  - For the measure column, contains the value of the observation.
-  - For a coded attribute column, contains the ID, name or both (see option below) of the corresponding observation's attribute.
-  - For a uncoded attribute column, contains the value of the corresponding observation's attribute.
+  - For the dataflow column, is the full reference to the *dataflow* (same as URN).
+  - For a dimension column, is the ID, name or both (see option below) of the observation's code in the corresponding dimension.
+  - For the measure column, is the value of the observation.
+  - For a coded attribute column, is the ID, name or both (see option below) of the code in the corresponding attribute. For attributes defined at series, group or dataset level, the codes are replicated for all observations concerned.
+  - For a uncoded attribute column, is the value of the corresponding attribute. For attributes defined at series, group or dataset level, the values are replicated for all observations concerned.
   - For any custom column, contains any custom content.
 - Comma Separator for columns is used by default, but it is recommended for implementers to provide the response according to the locale of the client (which means that in some cases the semi-colon ‘;’ is acceptable as separator).
 - HTTP content negotiation (HTTP Accept header) with mime-type (see [RFC 7231](https://tools.ietf.org/html/rfc7231#section-5.3.2)):
@@ -47,15 +47,15 @@ In order to benefit from best practices, SDMX-CSV is based on the rules defined 
 
 Optional parameters can be added to the HTTP Accept header. They need to be separated by `"; "`.
 - header (present|absent; default=present): This parameter is defined in the [RFC 4180](https://tools.ietf.org/html/rfc4180) standard.
-  - If the parameter value is `present` then the first row is the header containing the IDs (and/or labels) of the components as they are defined in the DSD. 
-  - If the parameter value is `absent` then in addition to the columns for all dimensions in the order defined in the DSD and the measure also all attribute columns in the order defined in the DSD need to be included in the message, but custom columns cannot be added.
+  - If the parameter value is `present` then the first row is the header as described above. 
+  - If the parameter value is `absent` then in addition to the columns for the dataflow, for all dimensions in the order defined in the DSD and for the measure also all attribute columns in the order defined in the DSD need to be included in the message, but custom columns cannot be added.
 - display (id|name|both; default=id): This parameter applies to all Nameable SDMX Artefacts contained in the header and the body of the message: 
   - If the parameter value is `id` then only the id of the Artefacts is displayed.
   - If the parameter value is `name` then only the name of the Artefacts (according to the language specified in the http negotiation) is displayed.
   - If the parameter value is `both` then the concatenated id and name of the Artefacts (according to the language specified in the http negotiation) separated by `": "` are displayed. Note that the character combination `": "` could also be part of the Artefact name and could therefore occur several times within the concatenated string.
 - timeFormat (original|normalized; default=original):
   - If the parameter value is `original` then the *TIME-PERIOD* values are displayed in the SDMX *TIME_PERIOD* format as originally recorded.
-  - If the parameter value is `normalized` then the *TIME_PERIOD* values are converted to the most granular [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) representation taking into account the highest frequency of the data in the message and the moment in time when the lower-frequency values were collected (which, e.g. at the ECB, is typically either at the beginning, middle or end of the reporting period). This eases comparisons and business analysis of multi-frequency values, e.g. in pivot tables. As an example, if annual and daily data are available in the message and the annual data were collected at the end of the reporting period, the formatted value for annual data for 2014 becomes 2014-12-31.
+  - If the parameter value is `normalized` then the *TIME_PERIOD* values are converted to the most granular [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) representation taking into account the highest frequency of the data in the message and the moment in time when the lower-frequency values were collected (which, e.g. at the ECB, is typically either at the beginning, middle or end of the reporting period). This eases comparisons and business analysis of multi-frequency values, e.g. in pivot tables. As an example, if annual and daily data are available in the message and the annual data were collected at the end of the reporting period, the formatted value for the annual period 2014 becomes 2014-12-31.
 
 Support of above parameters is not required by implementers.
 
