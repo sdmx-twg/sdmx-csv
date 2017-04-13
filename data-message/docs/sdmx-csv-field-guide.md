@@ -32,11 +32,11 @@ In order to benefit from best practices, SDMX-CSV is based on the rules defined 
   - For an attribute column, is the attribute's ID, name or both (see option below).
   - For any custom column, is any custom but unique term.
 - Column content (all rows after header):
-  - For the dataflow column, is the full reference to the *dataflow* (same as URN).
+  - For the dataflow column, is the reference to the *dataflow* in the following form: AGENCY:DATAFLOW_ID(VERSION).
   - For a dimension column, is the ID, name or both (see option below) of the observation's code in the corresponding dimension.
   - For the measure column, is the value of the observation.
   - For a coded attribute column, is the ID, name or both (see option below) of the code in the corresponding attribute. For attributes defined at series, group or dataset level, the codes are replicated for all observations concerned.
-  - For a uncoded attribute column, is the value of the corresponding attribute. For attributes defined at series, group or dataset level, the values are replicated for all observations concerned.
+  - For an uncoded attribute column, is the value of the corresponding attribute. For attributes defined at series, group or dataset level, the values are replicated for all observations concerned.
   - For any custom column, contains any custom content.
 - Comma Separator for columns is used by default, but it is recommended for implementers to provide the response according to the locale of the client (which means that in some cases the semi-colon ‘;’ is acceptable as separator).
 - HTTP content negotiation (HTTP Accept header) with mime-type (see [RFC 7231](https://tools.ietf.org/html/rfc7231#section-5.3.2)):
