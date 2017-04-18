@@ -32,7 +32,7 @@ In order to benefit from best practices, SDMX-CSV is based on the rules defined 
   - For an attribute column, is the attribute's ID, name or both (see option below).
   - For any custom column, is any custom but unique term.
 - Column content (all rows after header):
-  - For the dataflow column, is the reference to the *dataflow* in the following form: AGENCY:DATAFLOW_ID(VERSION).
+  - For the dataflow column, is the reference to the *dataflow* in the following form: AGENCY:DATAFLOW_ID(VERSION), its name or both (see option below).
   - For a dimension column, is the ID, name or both (see option below) of the observation's code in the corresponding dimension.
   - For the measure column, is the value of the observation.
   - For a coded attribute column, is the ID, name or both (see option below) of the code in the corresponding attribute. For attributes defined at series, group or dataset level, the codes are replicated for all observations concerned.
@@ -49,7 +49,7 @@ Optional parameters can be added to the HTTP Accept header. They need to be sepa
 - header (present|absent; default=present): This parameter is defined in the [RFC 4180](https://tools.ietf.org/html/rfc4180) standard.
   - If the parameter value is `present` then the first row is the header as described above. 
   - If the parameter value is `absent` then in addition to the columns for the dataflow, for all dimensions in the order defined in the DSD and for the measure also all attribute columns in the order defined in the DSD need to be included in the message, but custom columns cannot be added.
-- display (id|name|both; default=id): This parameter applies to all Nameable SDMX Artefacts contained in the header and the body of the message: 
+- labels (id|name|both; default=id): This parameter applies to all Nameable SDMX Artefacts contained in the header and the body of the message: 
   - If the parameter value is `id` then only the id of the Artefacts is displayed.
   - If the parameter value is `name` then only the name of the Artefacts (according to the language specified in the http negotiation) is displayed.
   - If the parameter value is `both` then the concatenated id and name of the Artefacts (according to the language specified in the http negotiation) separated by `": "` are displayed. Note that the character combination `": "` could also be part of the Artefact name and could therefore occur several times within the concatenated string.
@@ -69,7 +69,7 @@ Support of above parameters is not required by implementers.
 
 The following default parameter settings are automatically applied:
 - header=present
-- display=id
+- labels=id
 - timeFormat=original
 - *SERIESKEY* is a custom column.
 
@@ -79,12 +79,12 @@ The following default parameter settings are automatically applied:
     ESTAT:NA_MAIN(1.6),A,B,2014-02,10.8,Y,Y,"Normal, special and other values"
 
 The following default parameter settings are automatically applied:
-- display=id
+- labels=id
 - timeFormat=original
 - Custom columns are suppressed.
 - Dimension and attribute columns are ordered in order defined in related Data Structure Definition.
 
-#### application/vnd.sdmx.data+csv; version=1.0.0; display=name
+#### application/vnd.sdmx.data+csv; version=1.0.0; labels=name
 [French locale, French language]
 
     DATAFLOW;Dimension 1;Dimension 2;Dimension 3;OBS_VALUE;Attribut 2;Attribut 3;Attribut 1;SERIESKEY
@@ -96,7 +96,7 @@ The following default parameter settings are automatically applied:
 - timeFormat=original
 - *SERIESKEY* is a custom column.
 
-#### application/vnd.sdmx.data+csv; version=1.0.0; display=both; timeFormat=normalized
+#### application/vnd.sdmx.data+csv; version=1.0.0; labels=both; timeFormat=normalized
 [for pivot table]
 
     DATAFLOW,DIM_1: Dimension 1,DIM_2: Dimension 2,DIM_3: Dimension 3,OBS_VALUE,ATTR_2: Attribute 2,ATTR_3: Attribute 3,ATTR_1: Attribute 1,SERIESKEY
