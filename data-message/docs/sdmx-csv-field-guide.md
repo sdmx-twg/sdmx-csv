@@ -64,8 +64,8 @@ Support of above parameters is not required by implementers.
 #### application/vnd.sdmx.data+csv; version=1.0.0
 
     DATAFLOW,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_2,ATTR_3,ATTR_1,SERIESKEY
-    ESTAT+NA_MAIN+1.6,A,B,2014-01,12.4,Y,"Normal, special and other values",N,A.B
-    ESTAT+NA_MAIN+1.6,A,B,2014-02,10.8,Y,"Normal, special and other values",Y,A.B
+    ESTAT:NA_MAIN(1.6),A,B,2014-01,12.4,Y,"Normal, special and other values",N,A.B
+    ESTAT:NA_MAIN(1.6),A,B,2014-02,10.8,Y,"Normal, special and other values",Y,A.B
 
 The following default parameter settings are automatically applied:
 - header=present
@@ -75,8 +75,8 @@ The following default parameter settings are automatically applied:
 
 #### application/vnd.sdmx.data+csv; version=1.0.0; header=absent
 
-    ESTAT+NA_MAIN+1.6,A,B,2014-01,12.4,N,Y,"Normal, special and other values"
-    ESTAT+NA_MAIN+1.6,A,B,2014-02,10.8,Y,Y,"Normal, special and other values"
+    ESTAT:NA_MAIN(1.6),A,B,2014-01,12.4,N,Y,"Normal, special and other values"
+    ESTAT:NA_MAIN(1.6),A,B,2014-02,10.8,Y,Y,"Normal, special and other values"
 
 The following default parameter settings are automatically applied:
 - display=id
@@ -88,8 +88,8 @@ The following default parameter settings are automatically applied:
 [French locale, French language]
 
     DATAFLOW;Dimension 1;Dimension 2;Dimension 3;OBS_VALUE;Attribut 2;Attribut 3;Attribut 1;SERIESKEY
-    ESTAT+NA_MAIN+1.6;Valeur A;Valeur B;2014-01;12,4;Oui;Normal, special and other values;Non;A.B
-    ESTAT+NA_MAIN+1.6;Valeur A;Valeur B;2014-02;10,8;Oui;Normal, special and other values;Oui;A.B
+    Principaux agrégats des comptes nationaux;Valeur A;Valeur B;2014-01;12,4;Oui;Normal, special and other values;Non;A.B
+    Principaux agrégats des comptes nationaux;Valeur A;Valeur B;2014-02;10,8;Oui;Normal, special and other values;Oui;A.B
 
 The following default parameter settings are automatically applied:
 - header=present
@@ -100,8 +100,8 @@ The following default parameter settings are automatically applied:
 [for pivot table]
 
     DATAFLOW,DIM_1: Dimension 1,DIM_2: Dimension 2,DIM_3: Dimension 3,OBS_VALUE,ATTR_2: Attribute 2,ATTR_3: Attribute 3,ATTR_1: Attribute 1,SERIESKEY
-    ESTAT+NA_MAIN+1.6,A: Value A,B: Value B,2014-01-01,12.4,Y: Yes,"Normal, special and other values",N: No,A.B
-    ESTAT+NA_MAIN+1.6,A: Value A,B: Value B,2014-02-01,10.8,Y: Yes,"Normal, special and other values",Y: Yes,A.B
+    ESTAT:NA_MAIN(1.6): National Accounts Main Aggregates,A: Value A,B: Value B,2014-01-01,12.4,Y: Yes,"Normal, special and other values",N: No,A.B
+    ESTAT:NA_MAIN(1.6): National Accounts Main Aggregates,A: Value A,B: Value B,2014-02-01,10.8,Y: Yes,"Normal, special and other values",Y: Yes,A.B
 
 The following default parameter settings are automatically applied:
 - header=present
