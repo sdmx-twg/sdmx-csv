@@ -51,7 +51,7 @@ Optional parameters can be added to the HTTP Accept header. They need to be sepa
   - If the parameter value is `absent` then in addition to the columns for the dataflow, for all dimensions in the order defined in the DSD and for the measure also all attribute columns in the order defined in the DSD need to be included in the message, but custom columns cannot be added.
 - labels (id|name|both; default=id): This parameter applies to all Nameable SDMX Artefacts contained in the header and the body of the message: 
   - If the parameter value is `id` then only the id of the Artefacts is displayed.
-  - If the parameter value is `name` then only the name of the Artefacts (according to the language specified in the http negotiation) is displayed.
+  - If the parameter value is `name` then only the name of the Artefacts (according to the language specified in the http negotiation) is displayed. In case the name of an Artefact is not available the ID of the Artefact should be provided instead of an empty field.
   - If the parameter value is `both` then the concatenated id and name of the Artefacts (according to the language specified in the http negotiation) separated by `": "` are displayed. Note that the character combination `": "` could also be part of the Artefact name and could therefore occur several times within the concatenated string.
 - timeFormat (original|normalized; default=original):
   - If the parameter value is `original` then the *TIME-PERIOD* values are displayed in the SDMX *TIME_PERIOD* format as originally recorded.
