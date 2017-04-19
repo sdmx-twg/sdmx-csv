@@ -61,7 +61,7 @@ Support of above parameters is not required by implementers.
 
 # Examples
 
-#### application/vnd.sdmx.data+csv; version=1.0.0
+#### 1) HTTP Accept header: application/vnd.sdmx.data+csv; version=1.0.0
 
     DATAFLOW,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_2,ATTR_3,ATTR_1,SERIESKEY
     ESTAT:NA_MAIN(1.6),A,B,2014-01,12.4,Y,"Normal, special and other values",N,A.B
@@ -73,7 +73,7 @@ The following default parameter settings are automatically applied:
 - timeFormat=original
 - *SERIESKEY* is a custom column.
 
-#### application/vnd.sdmx.data+csv; version=1.0.0; header=absent
+#### 2) HTTP Accept header: application/vnd.sdmx.data+csv; version=1.0.0; header=absent
 
     ESTAT:NA_MAIN(1.6),A,B,2014-01,12.4,N,Y,"Normal, special and other values"
     ESTAT:NA_MAIN(1.6),A,B,2014-02,10.8,Y,Y,"Normal, special and other values"
@@ -84,8 +84,8 @@ The following default parameter settings are automatically applied:
 - Custom columns are suppressed.
 - Dimension and attribute columns are ordered in order defined in related Data Structure Definition.
 
-#### application/vnd.sdmx.data+csv; version=1.0.0; labels=name
-[French locale, French language]
+#### 3) HTTP Accept header: application/vnd.sdmx.data+csv; version=1.0.0; labels=name
+####    HTTP Accept-Language header: fr-FR, en;q=0.7
 
     DATAFLOW;Dimension 1;Dimension 2;Dimension 3;OBS_VALUE;Attribut 2;Attribut 3;Attribut 1;SERIESKEY
     Principaux agrégats des comptes nationaux;Valeur A;Valeur B;2014-01;12,4;Oui;Normal, special and other values;Non;A.B
@@ -96,8 +96,9 @@ The following default parameter settings are automatically applied:
 - timeFormat=original
 - *SERIESKEY* is a custom column.
 
-#### application/vnd.sdmx.data+csv; version=1.0.0; labels=both; timeFormat=normalized
-[for pivot table]
+Note that in this example the client prefers French (fr) language with the France (FR) locale, but will also accept any type of English. See [RFC 2616 - HTTP 1.1 Header Field Definitions](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html). Therefore, in the message the French language with the France locale is realized, transforming also the field separator from comma (,) to semicolon (;), and the decimal separator from dot (.) to comma (,).
+
+#### 4) HTTP Accept header: application/vnd.sdmx.data+csv; version=1.0.0; labels=both; timeFormat=normalized
 
     DATAFLOW,DIM_1: Dimension 1,DIM_2: Dimension 2,DIM_3: Dimension 3,OBS_VALUE,ATTR_2: Attribute 2,ATTR_3: Attribute 3,ATTR_1: Attribute 1,SERIESKEY
     ESTAT:NA_MAIN(1.6): National Accounts Main Aggregates,A: Value A,B: Value B,2014-01-01,12.4,Y: Yes,"Normal, special and other values",N: No,A.B
