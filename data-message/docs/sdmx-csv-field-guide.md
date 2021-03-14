@@ -130,11 +130,11 @@ Note: The following default parameter settings are automatically applied:
 - timeFormat=original
 - *SERIESKEY* is a custom column.
 
-#### 2) Components in any order and missing component, Variant A
+#### 2) Components in any order, missing component(s), component with multiple values: Variant A
 
-	DATAFLOW[;],SERIESKEY,OBS_VALUE1,OBS_VALUE2,ATTR_3,ATTR_1,DIM_2,DIM_1,DIM_3
-	ESTAT:NA_MAIN(1.6.0),A.B,12.4,12.5,"Normal, special and other values",N,B,A,2014-01
-	ESTAT:NA_MAIN(1.6.0),A.B,10.8,10.9,"Normal, special and other values",Y,B,A,2014-02
+	DATAFLOW[;],SERIESKEY,OBS_VALUE1,OBS_VALUE2,ATTR_3,ATTR_1[],DIM_2,DIM_1,DIM_3
+	ESTAT:NA_MAIN(1.6.0),A.B,12.4,12.5,"Normal, special and other values",X;Y,B,A,2014-01
+	ESTAT:NA_MAIN(1.6.0),A.B,10.8,10.9,"Normal, special and other values",X;Z,B,A,2014-02
 
 #### 3) Components in any order and missing component, Variant B
 
