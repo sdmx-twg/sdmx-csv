@@ -108,7 +108,7 @@ Note: For multi-language metadata attribute values, all language versions are pr
 
 # Optional parameter
 
-The following optional parameters can be added to the HTTP Accept header. It needs to be separated by the character combination `"; "`.
+The following optional parameter can be added to the HTTP Accept header. It needs to be separated by the character combination `"; "`.
 - labels (id|both; default=id): This parameter applies to all Nameable SDMX Artefacts contained in the header and the body of the message: 
   - If the parameter value is `id` then only the id of the Artefacts is displayed.
   - If the parameter value is `both` then the concatenated id and localised name of the Artefacts (see the section on [localised names](#localised-names) on how the message deals with languages) separated by `": "` are displayed. Note that the character combination `": "` could also be part of the Artefact name and could therefore occur several times within the concatenated string.
