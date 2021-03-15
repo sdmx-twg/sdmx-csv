@@ -27,6 +27,7 @@ The SDMX-CSV format is flexible enough in its representation to support the need
 ## Columns
 
 - The first column is always used for the dataflow, data structure definition or data provision agreement identification and other optional pieces of identification information.
+- The second column is always used for the action to be performed for each observation or to the attributes attached to partial keys.
 - Each Data Structure Definition (DSD) component (dimensions, attributes (including those defined through a referenced Metadata Structure Definition (MSD)), measures) included in the message is represented in one column, in any order.
 - Only all those dimensions are to be included, that are required to uniquely identify the included attributes and/or measures.
 - Attributes can but do not need to be included even if they have a mandatory status.
@@ -43,6 +44,7 @@ The SDMX-CSV format is flexible enough in its representation to support the need
   - **Variant C1** (only if all data contained in the message belong to the same artefact and if option `labels=both` (see *[here](#optional-parameters)*)): a sub-field delimiter, the artefact identification information in the form *AGENCY:ARTEFACT_ID(VERSION)*(1), a separation term ": " and the artefact's localised name, e.g. `DATAFLOW[;ESTAT:NA_MAIN(1.6.0): National Accounts Main Aggregates]`.
   - **Variant C2** (only if all data contained in the message belong to the same artefact and if option `labels=name` (see *[here](#optional-parameters)*)): a sub-field delimiter, the artefact identification information in the form *AGENCY:ARTEFACT_ID(VERSION)*(1), a colon character ":", the IDs of the components included in the message (in any order) separated by a dot ".", a separation term ": " and the artefact's localised name, e.g. `DATAFLOW[;ESTAT:NA_MAIN(1.6.0):DIM1.DIM2.DIM3.MEAS1.MEAS3.ATTR2.ATTR4: National Accounts Main Aggregates]`.
   - For the variants C1 and C2, if the artefact name contains squared brackets then they must be doubled, e.g. `DATAFLOW[;AGENCY:ARTEFACT_1(1.0.0): Artefact [[1]]]`.
+- The header field of the second column always contains the term `ACTION`. For backward-compatibility, if this column is not present, a default action ("Information") is assumed for the whole message.
 - The other columns for components contain either:
   - Default: The ID of the component reported in that column, e.g. `DIM1`.
   - If option `labels=both` (see *[here](#optional-parameters)*): The ID and the localised name of the component reported in that column separated by the term ": ", e.g. `DIM1: Dimension 1`.
@@ -56,6 +58,12 @@ The SDMX-CSV format is flexible enough in its representation to support the need
   - Default if option `labels=both` (see *[here](#optional-parameters)*): The artefact identification information in the form *AGENCY:ARTEFACT_ID(VERSION)* and its localised name separated by the term ": ", e.g.  `ESTAT:NA_MAIN(1.6.0): National Accounts Main Aggregates`.
   - If variant B or if option `labels=both` (see *[here](#optional-parameters)*) with variant C1: The fields are being left empty.
   - If option `labels=name` (see *[here](#optional-parameters)*) with variant C2: The IDs of the component values included in the message (respecting the order of components listed in the header of the first column) separated by a dot ".", leaving non-enumerated component values empty, e.g. `A.B.C...AA..`.
+- The second column contains one character representing one of the current 4 action types:
+  - "I": Information - Data is for information purposes.
+  - "A": Append -  Data is an incremental update for an existing dataset or the provision of new data or documentation (attribute values) formerly absent. If any of the supplied data is already present, it will not replace that data. This corresponds to the "Update" value found in version 1.0 of the SDMX Technical Standards.
+  - "R": Replace - Data is to be replaced, and may also include additional data to be appended.
+  - "D": Delete - Data is to be deleted.
+  - For backward-compatibility, if this column is absent then the action "Information" is assumed.
 - The other columns for components contain either:
   - Default: The ID(s) (if coded) or value(s) (if non-coded) for the component values reported in that column for the corresponding observation, e.g. `A`.
   - If option `labels=both` (see *[here](#optional-parameters)*): The ID(s) and the localised name separated by the term ": " (if coded) or the value(s) (if non-coded) for the component values reported in that column for the corresponding observation, e.g. `A: A value name`.
@@ -121,9 +129,9 @@ Note: All examples assume the minimal HTTP Accept header: `application/vnd.sdmx.
 
 #### 1) Ordinary case
 
-	DATAFLOW,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_2,ATTR_3,ATTR_1,SERIESKEY
-	ESTAT:NA_MAIN(1.6.0),A,B,2014-01,12.4,Y,"Normal, special and other values",N,A.B
-	ESTAT:NA_MAIN(1.6.0),A,B,2014-02,10.8,Y,"Normal, special and other values",Y,A.B
+	DATAFLOW,ACTION,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_2,ATTR_3,ATTR_1,SERIESKEY
+	ESTAT:NA_MAIN(1.6.0),I,A,B,2014-01,12.4,Y,"Normal, special and other values",N,A.B
+	ESTAT:NA_MAIN(1.6.0),I,A,B,2014-02,10.8,Y,"Normal, special and other values",Y,A.B
 
 Note: The following default parameter settings are automatically applied:
 - labels=id
@@ -132,78 +140,78 @@ Note: The following default parameter settings are automatically applied:
 
 #### 2) Components in any order, missing component(s), component with multiple values: Variant A
 
-	DATAFLOW[;],SERIESKEY,OBS_VALUE1,OBS_VALUE2,ATTR_3,ATTR_1[],DIM_2,DIM_1,DIM_3
-	ESTAT:NA_MAIN(1.6.0),A.B,12.4,12.5,"Normal, special and other values",X;Y,B,A,2014-01
-	ESTAT:NA_MAIN(1.6.0),A.B,10.8,10.9,"Normal, special and other values",X;Z,B,A,2014-02
+	DATAFLOW[;],ACTION,SERIESKEY,OBS_VALUE1,OBS_VALUE2,ATTR_3,ATTR_1[],DIM_2,DIM_1,DIM_3
+	ESTAT:NA_MAIN(1.6.0),I,A.B,12.4,12.5,"Normal, special and other values",X;Y,B,A,2014-01
+	ESTAT:NA_MAIN(1.6.0),I,A.B,10.8,10.9,"Normal, special and other values",X;Z,B,A,2014-02
 
 #### 3) Components in any order and missing component, Variant B
 
-	DATAFLOW[;ESTAT:NA_MAIN(1.6.0)],SERIESKEY,OBS_VALUE1,OBS_VALUE2,ATTR_3,ATTR_1,DIM_2,DIM_1,DIM_3
-	,A.B,12.4,12.5,"Normal, special and other values",N,B,A,2014-01
-	,A.B,10.8,10.9,"Normal, special and other values",Y,B,A,2014-02
+	DATAFLOW[;ESTAT:NA_MAIN(1.6.0)],ACTION,SERIESKEY,OBS_VALUE1,OBS_VALUE2,ATTR_3,ATTR_1,DIM_2,DIM_1,DIM_3
+	,I,A.B,12.4,12.5,"Normal, special and other values",N,B,A,2014-01
+	,I,A.B,10.8,10.9,"Normal, special and other values",Y,B,A,2014-02
 
 #### 4) Localisation: HTTP Accept header: `application/vnd.sdmx.data+csv; version=1.0.0; labels=both`, HTTP Accept-Language header: `fr-FR, en;q=0.7`, Variant C1
 
-	DATAFLOW[|ESTAT:NA_MAIN(1.6.0): Principaux agrégats des comptes nationaux];DIM_1: Dimension 1;DIM_2: Dimension 2;DIM_3: Dimension 3;OBS_VALUE: Observation value;ATTR_2: Attribut 2;ATTR_3: Attribut 3;ATTR_1: Attribut 1;SERIESKEY
-	;A: Value A;B: Value B;2014-01: 2014-01;12,4;Y: Oui;Normal, special and other values;N: Non;A.B
-	;A: Value A;B: Value B;2014-01: 2014-02;10,8;Y: Oui;Normal, special and other values;Y: Oui;A.B
+	DATAFLOW[|ESTAT:NA_MAIN(1.6.0): Principaux agrégats des comptes nationaux];ACTION;DIM_1: Dimension 1;DIM_2: Dimension 2;DIM_3: Dimension 3;OBS_VALUE: Observation value;ATTR_2: Attribut 2;ATTR_3: Attribut 3;ATTR_1: Attribut 1;SERIESKEY
+	;I;A: Value A;B: Value B;2014-01: 2014-01;12,4;Y: Oui;Normal, special and other values;N: Non;A.B
+	;I;A: Value A;B: Value B;2014-01: 2014-02;10,8;Y: Oui;Normal, special and other values;Y: Oui;A.B
 
 Note that in this example the client prefers French (fr) language with the France (FR) locale, but will also accept any type of English. Therefore, in the message the French language with the France locale is applied, transforming also the field separator from comma (,) to semicolon (;), and the decimal separator from dot (.) to comma (,).
 
 #### 5) HTTP Accept header: `application/vnd.sdmx.data+csv; version=1.0.0; labels=both; timeFormat=normalized`, Variant C1
 
-	DATAFLOW[;ESTAT:NA_MAIN(1.6.0): National Accounts Main Aggregates],DIM_1: Dimension 1,DIM_2: Dimension 2,DIM_3: Dimension 3,OBS_VALUE: Observation value,ATTR_2: Attribute 2,ATTR_3: Attribute 3,ATTR_1: Attribute 1,SERIESKEY
-	,A: Value A,B: Value B,2014-01-01,12.4,Y: Yes,"Normal, special and other values",N: No,A.B
-	,A: Value A,B: Value B,2014-02-01,10.8,Y: Yes,"Normal, special and other values",Y: Yes,A.B
+	DATAFLOW[;ESTAT:NA_MAIN(1.6.0): National Accounts Main Aggregates],ACTION,DIM_1: Dimension 1,DIM_2: Dimension 2,DIM_3: Dimension 3,OBS_VALUE: Observation value,ATTR_2: Attribute 2,ATTR_3: Attribute 3,ATTR_1: Attribute 1,SERIESKEY
+	,I,A: Value A,B: Value B,2014-01-01,12.4,Y: Yes,"Normal, special and other values",N: No,A.B
+	,I,A: Value A,B: Value B,2014-02-01,10.8,Y: Yes,"Normal, special and other values",Y: Yes,A.B
 
 #### 6) HTTP Accept header: `application/vnd.sdmx.data+csv; version=1.0.0; labels=name` = Variant C2
 
-	DATAFLOW[;ESTAT:NA_MAIN(1.6.0):DIM_2.DIM_1.DIM_3.OBS_VALUE.ATTR_2.ATTR_3.ATTR_1: National Accounts Main Aggregates],Dimension 1,Dimension 2,Dimension 3,Observation value,Attribute 2,Attribute 3,Attribute 1,SERIESKEY
-	B.A.2014-01..Y..N,Value B,Value A,2014-01,12.4,Yes,"Normal, special and other values",No,A.B
-	B.A.2014-02..Y..Y,Value B,Value A,2014-01,10.8,Yes,"Normal, special and other values",Yes,A.B
+	DATAFLOW[;ESTAT:NA_MAIN(1.6.0):DIM_2.DIM_1.DIM_3.OBS_VALUE.ATTR_2.ATTR_3.ATTR_1: National Accounts Main Aggregates],ACTION,Dimension 1,Dimension 2,Dimension 3,Observation value,Attribute 2,Attribute 3,Attribute 1,SERIESKEY
+	B.A.2014-01..Y..N,I,Value B,Value A,2014-01,12.4,Yes,"Normal, special and other values",No,A.B
+	B.A.2014-02..Y..Y,I,Value B,Value A,2014-01,10.8,Yes,"Normal, special and other values",Yes,A.B
 
 #### 7) Multi-valued components, Variant B
 
-	DATAFLOW[;ESTAT:NA_MAIN(1.6.0)],DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_1[],ATTR_2[],ATTR_3[]
-	,A,B,2014-01,12.4,Value X;Value Y,"M, N & O;P & Q",A;B;C
-	,A,B,2014-02,10.8,Value X;Value Y,"M, N & O;P & Q",A;C
+	DATAFLOW[;ESTAT:NA_MAIN(1.6.0)],ACTION,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_1[],ATTR_2[],ATTR_3[]
+	,I,A,B,2014-01,12.4,Value X;Value Y,"M, N & O;P & Q",A;B;C
+	,I,A,B,2014-02,10.8,Value X;Value Y,"M, N & O;P & Q",A;C
 
 #### 8) Non-coded multi-lingual components, varying dataflows, Variant A
 
-	DATAFLOW[;],DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_1[en;fr]
-	ESTAT:NA_MAIN(1.6.0),A,B,2014-01,12.4,en:Any Value;fr:N'importe quelle Valeur
-	ESTAT:NA_MAIN(1.7.0),A,B,2014-02,10.8,"en:Value ""X"";fr:Valeur ""X"""
+	DATAFLOW[;],ACTION,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_1[en;fr]
+	ESTAT:NA_MAIN(1.6.0),I,A,B,2014-01,12.4,en:Any Value;fr:N'importe quelle Valeur
+	ESTAT:NA_MAIN(1.7.0),I,A,B,2014-02,10.8,"en:Value ""X"";fr:Valeur ""X"""
 
 #### 9) Non-coded multi-lingual multi-valued components, varying dataflows, Variant A
 
-	DATAFLOW[;],DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_1[en;fr;de]
-	ESTAT:NA_MAIN(1.6.0),A,B,2014-01,12.4,"""en:Value1;fr:Valeur1"";""en:Value2;de:Wert2"""
-	ESTAT:NA_MAIN(1.7.0),A,B,2014-02,10.8,"""en:Value1;fr:Valeur1"";""en:Value2;de:Wert2"""
+	DATAFLOW[;],ACTION,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_1[en;fr;de]
+	ESTAT:NA_MAIN(1.6.0),I,A,B,2014-01,12.4,"""en:Value1;fr:Valeur1"";""en:Value2;de:Wert2"""
+	ESTAT:NA_MAIN(1.7.0),I,A,B,2014-02,10.8,"""en:Value1;fr:Valeur1"";""en:Value2;de:Wert2"""
 
 #### 10) Data for a non-versioned(1) data structure definition, Variant B
 
-	DATASTRUCTURE[;AGENCY:DF_ID],DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_1,SERIESKEY
-	,A,B,2014-01,12.4,N,A.B
-	,A,B,2014-02,10.8,Y,A.B
+	DATASTRUCTURE[;AGENCY:DF_ID],ACTION,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_1,SERIESKEY
+	,I,A,B,2014-01,12.4,N,A.B
+	,I,A,B,2014-02,10.8,Y,A.B
 
 #### 11) Attributes attached to partial keys for a data provision agreement, Variant B
 
-	DATAPROVISION[;AGENCY:DPA_ID(1.0.0)],DIM_2,DIM_3,ATTR_1
-	,B,2014-01,N
-	,B,2014-02,Y
+	DATAPROVISION[;AGENCY:DPA_ID(1.0.0)],ACTION,DIM_2,DIM_3,ATTR_1
+	,I,B,2014-01,N
+	,I,B,2014-02,Y
 
 #### 12) Mixing rows for attributes attached to partial keys with rows for observations 
 
-	DATAFLOW,DIM_1,DIM_2,DIM_3,MEAS_1,ATTR_1,ATTR_2
-	AGENCY:DF_ID(1.0.0),A,B,2014-01,12.4,N,
-	AGENCY:DF_ID(1.0.0),,B,,,,Y
+	DATAFLOW,ACTION,DIM_1,DIM_2,DIM_3,MEAS_1,ATTR_1,ATTR_2
+	AGENCY:DF_ID(1.0.0),I,A,B,2014-01,12.4,N,
+	AGENCY:DF_ID(1.0.0),I,,B,,,,Y
 
 #### 13) Non-coded XHTML-formatted values with line-breaks 
 
-	DATAFLOW,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_1
-	ESTAT:NA_MAIN(1.6.0),A,B,2014-01,12.4,"<p>This is some ""xhtml"" with a line
+	DATAFLOW,ACTION,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_1
+	ESTAT:NA_MAIN(1.6.0),I,A,B,2014-01,12.4,"<p>This is some ""xhtml"" with a line
 	break</p>"
-	ESTAT:NA_MAIN(1.6.0),A,B,2014-02,10.8,"<p>This is some other ""xhtml""</p>"
+	ESTAT:NA_MAIN(1.6.0),I,A,B,2014-02,10.8,"<p>This is some other ""xhtml""</p>"
 
 ------------------------
 
