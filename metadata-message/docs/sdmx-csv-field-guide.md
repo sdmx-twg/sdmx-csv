@@ -6,7 +6,7 @@ SDMX-CSV integrates with other specifications, i.e.:
 - The SDMX API RESTful specification (e.g. content negotiation with mime-type to get SDMX-CSV representations, specific formats for responses, language selection through HTTP content negotiation)
 - The [RFC 4180](https://tools.ietf.org/html/rfc4180) specification
 
-##	RFC 4180: A common format for CSV files
+## RFC 4180: A common format for CSV files
 In order to benefit from best practices, SDMX-CSV is based on the rules defined in the [RFC 4180](https://tools.ietf.org/html/rfc4180), which defines a common format and MIME Type for CSV files. It is advised to read the (very short) RFC for a full list of requirements but, in a nutshell, the RFC defines rules such as:
 - How the CSV file should be structured (the RFC specifies that all records must have an identical structure (determined column number), like when using an SDMX "flat" representation for data);
 - When double-quotes should be used and how to escape them when needed;
@@ -27,53 +27,58 @@ The SDMX-CSV format is flexible enough in its representation to support the need
 
 ## Columns
 
-- The first column is always used for the metadataflow or metadata provision agreement identification and other optional pieces of identification information.
-- The second column is always used for the metadataset identification information.
-- The third column is always used for the action to be performed for the metadataset.
-- The fourth column is always used for the target type.
-- The fifth column is always used for the target identification.
-- The sixth column is always used for the metadata attribute identification.
-- The seventh column is always used for the metadata attribute value. 
+- The first column is always used for the structure type: metadataflow or metadata provision agreement.
+- The next one or two columns are always used for the structure identification.
+- The next one or two columns are always used for the metadataset identification.
+- The next column is always used for the action to be performed for the metadataset.
+- The next column is always used for the target type.
+- The next one or two columns are always used for the target identification.
+- The next one or two columns are always used for the metadata attribute identification.
+- The next column is always used for the metadata attribute value. 
 - Implementers have the possibility to add any other custom columns as required, e.g. publicationPeriod, publicationYear, reportingBegin, reportingEnd, prepared, etc.
+- In the context of deletions, the columns TARGET_TYPE, TARGET_ID and ATTRIBUTE_ID may be omitted.
 
 ## Column headers (first row)
 
-- The header field of the first column always starts with one of the terms `METADATAFLOW` or `METADATAPROVISION`, depending on type of artefact for which the metadata contained in the message are defined: metadataflow or metadata provision agreement.
-- Optionally, the header of the first column can be extended with the following pieces of information encapsulated in squared brackets "[]":
-  - **Variant A**: a sub-field delimiter, e.g. `METADATAFLOW[;]`.
-  - **Variant B** (only if all metadata contained in the message belong to the same artefact): a sub-field delimiter and the artefact identification information in the form *AGENCY:ARTEFACT_ID(VERSION)*(1), e.g. `METADATAFLOW[;AGENCY:MDF(1.0.0)]`.
-  - **Variant C** (only if all metadata contained in the message belong to the same artefact and if option `labels=both` (see *[here](#optional-parameters)*)): a sub-field delimiter, the artefact identification information in the form *AGENCY:ARTEFACT_ID(VERSION)*(1), a separation term ": " and the artefact's localised name, e.g. `METADATAFLOW[;AGENCY:MDF(1.0.0): Metadataflow name]`.
-  - For the variant C, if the artefact name contains squared brackets then they must be doubled, e.g. `METADATAFLOW[;AGENCY:MDF(1.0.0): Metadataflow name [[1]]]`.
-- The header of the second column always contains `METADATASET`.
-  - If all metadata contained in the message belong to the same metadataset then this field can be extended with the metadata identification information in the form *AGENCY:ARTEFACT_ID(VERSION)*(1) encapsulated in squared brackets "[]", e.g. `METADATASET[AGENCY:MDS(1.0.0)]`. In that case, the metadata identification information does not need to be repeated in each subsequent row. In addition, if option `labels=both` (see *[here](#optional-parameters)*) then the ID is complemented with the localised name of the metadataset separated by the term ": ", e.g. `METADATASET[AGENCY:MDS(1.0.0): Metadataset name]`.
-- The header field of the third column always contains the term `ACTION`.
-- The header of the fourth column always contains `TARGET_TYPE`.
-  - If all metadata contained in the message are related to a target of the same type then this field can be extended with the target type according to the resource names defined for Structural Metadata Queries encapsulated in squared brackets "[]", e.g. `TARGET_TYPE[dataflow]`. In that case, the target type does not need to be repeated in each subsequent row.
-- The header of the fifth column always contains `TARGET_ID`.
-  - If all metadata contained in the message are related to the same target then this field can be extended with the target identification information in the form *AGENCY:ARTEFACT_ID(VERSION)*(1) encapsulated in squared brackets "[]", e.g. `TARGET_ID[AGENCY:DF(1.0.0)]`. In that case, the target does not need to be repeated in each subsequent row. In addition, if option `labels=both` (see *[here](#optional-parameters)*) then the ID is complemented with the localised name of the target separated by the term ": ", e.g. `TARGET_ID[AGENCY:DF(1.0.0): Dataflow name]`.
-- The header of the sixth column always contains `ATTRIBUTE_ID`.
-- The header of the seventh column `ATTRIBUTE_VALUE`. 
+- The header field of the first column always starts with the term `MDSTRUCTURE`.
+  - This field must be extended with a sub-field delimiter encapsulated in squared brackets "[]", e.g. `MDSTRUCTURE[;]`, in case the message contains multi-valued or multi-language metadata attribute values.
+- The header field of the second column always contains the term `MDSTRUCTURE_ID`.
+- If option `labels=name` (see *[here](#optional-parameters)*): An additional column is added right after the structure identification column containing the term `MDSTRUCTURE_NAME`.
+- The header field of the next column always contains the term `METADATASET`.
+- If option `labels=name` (see *[here](#optional-parameters)*): An additional column is added right after the metadataset identification column containing the term `METADATASET_NAME`.
+- The header field of the next column should contain the term `ACTION`. For convenience, if this column is not present, a default action ("Information") is assumed for the whole message.
+- The header field of the next column always contains the term `TARGET_TYPE`.
+- The header field of the next column always contains the term `TARGET_ID`.
+- If option `labels=name` (see *[here](#optional-parameters)*): An additional column is added right after the target identification column containing the term `TARGET_NAME`.
+- The header field of the next column always contains the term `ATTRIBUTE_ID`.
+- If option `labels=name` (see *[here](#optional-parameters)*): An additional column is added right after the attribute identification column containing the term `ATTRIBUTE_NAME`.
+- The header field of the next column always contains the term `ATTRIBUTE_VALUE`. 
 - Any other custom column contains a custom but unique term, e.g. `publicationPeriod`.
+- In case all contained sub-sequent rows contain strictly the same information, it is possible to condense the message by extending the related column header field with the equal character "=" and the content of the subsequent rows for this column, e.g. `MDSTRUCTURE[;]=metadataflow`, `MDSTRUCTURE_ID=ESTAT:MDF(1.6.0)`, `MDSTRUCTURE_ID=ESTAT:MDF(1.6.0): Metadataflow name`, `METADATASET=AGENCY:MDS(1.0.0)`, `TARGET_TYPE=DATAFLOW`, `TARGET_ID=AGENCY:DF(1.0.0)`, `ACTION=I`. In this case, the content of the subsequent rows for this column can be left empty.
 
 ## Column content (all rows after header)
 
-- The first column contains:
-  - Default: The artefact identification information in the form *AGENCY:ARTEFACT_ID(VERSION)*(1), e.g. `AGENCY:NA_MAIN(1.6.0)`.
-  - Default if option `labels=both` (see *[here](#optional-parameters)*): The artefact identification information in the form *AGENCY:ARTEFACT_ID(VERSION)* and its localised name separated by the term ": ", e.g.  `AGENCY:NA_MAIN(1.6.0): National Accounts Main Aggregates`.
-  - If variant B or if option `labels=both` (see *[here](#optional-parameters)*) with variant C: The fields are being left empty.
-- The second column always contains the metadataset identification information in the form *AGENCY:ARTEFACT_ID(VERSION)*(1), e.g. `AGENCY:MD_SET(1.0.0)`.
+- The first column contains: `metadataflow` or `metadataprovision`, depending on type of artefact for which the metadata contained in the message are defined: metadataflow or metadata provision agreement.
+- The second column contains:
+  - Default: The structure identification information in the form *AGENCY:ARTEFACT_ID(VERSION)*(1), e.g. `ESTAT:MDF(1.6.0)`.
+  - If option `labels=both` (see *[here](#optional-parameters)*): The structure identification information and its localised name separated by the term ": ", e.g. `ESTAT:MDF(1.6.0): Metadataflow name`.
+- If option `labels=name` (see *[here](#optional-parameters)*): An additional column is added right after the structure identification column with the structure's localised name, e.g. `Metadataflow name`.
+- The next column contains the metadataset identification information in the form *AGENCY:ARTEFACT_ID(VERSION)*(1), e.g. `AGENCY:MD_SET(1.0.0)`.
   - If option `labels=both` (see *[here](#optional-parameters)*): The ID and the localised name of the metadataset separated by the term ": ", e.g. `ESTAT:MD_SET(1.0.0): Metadataset 1`.
-  - If the metadataset identification information is already given in the column header then this field is left empty.
-- The third column contains one character representing one of the current 4 action types:
+- If option `labels=name` (see *[here](#optional-parameters)*): An additional column is added right after the metadataset identification column with the metadataset's localised name, e.g. `Metadata set name`.
+- The next column contains one character representing one of the current 4 action types:
   - "I": Information - Metadata is for information purposes.
-  - "A": Append -  Metadata is an incremental update for an existing metadataset or the provision of new metadata or documentation (attribute values) formerly absent. If any of the supplied metadata is already present, it will not replace that metadata. This corresponds to the "Update" value found in version 1.0 of the SDMX Technical Standards.
+  - "A": Append -  Metadata is an incremental update for an existing metadataset or the provision of new metadata or documentation (metadata attribute values) formerly absent. If any of the supplied metadata is already present, it will not replace that metadata. This corresponds to the "Update" value found in version 1.0 of the SDMX Technical Standards. However, according to SDMX STANDARDS: SECTION 3A PART IV: "_Append is assumed to be an incremental update. This means that one the information provided explicitly in the message should be altered. Any data attribute or observation value that is to be changed must be provided. However, the absence of an observation value or a data attribute at any level does not imply deletion; instead it is simply implied that the value is to remain unchanged. Therefore, it is valid and acceptable to send a data message with an action of Append which contains only a Series elements with attribute values. In this case, the values for the attributes will be updated. Note that it is not permissible to update data attributes using partial keys (outside of those associated with defined groups). In order to update an attribute, a full key must always be provided even if the message format does not require this._" 
   - "R": Replace - Metadata is to be replaced, and may also include additional metadata to be appended.
-  - "D": Delete - Metadata is to be deleted.
-- The fourth column always contains the target type according to the resource names defined for Structural Metadata Queries, e.g. `dataflow`.
-- The fifth column always contains the target identification information in the form *AGENCY:ARTEFACT_ID(VERSION)*(1), e.g. `AGENCY:DF(1.0.0)`.
+  - "D": Delete - Metadata is to be deleted. According to SDMX STANDARDS: SECTION 3A PART IV: "_Delete is assumed to be an incremental deletion. The deletion is assumed to take place of the lowest level of detail provided in the message. For example, if a delete message is sent with only a data set element, the entire data set will be deleted. On the other hand, if that data set contains a data attribute, only that data attribute value will be deleted. This same dynamic continues through the data set hierarchy. A data set containing only a series with no data attributes or observations will result in that entire series (all observations and data attributes) being deleted. If the series contains data attributes, only the supplied data attributes for that series will be deleted. Finally, if a series contains observations, then only the specified observations will be deleted. If an entire observation is to be deleted (value and data attributes), only the observation dimension should be provided. If only the observation value or particular data attributes are to be deleted, then these should be specified for the observation. Note that a group can only be used to delete the data attributes associated with it. Although the format might not require it, a full key must be provided to delete a series or observation. It is not permissible to wild card a key in order to delete more than one series or observation. Finally, to delete a data attribute or observation value it is recommended that the value to be deleted be supplied; however, it is only required that any valid value be provided._" 
+  - For convenience, if this column is absent then the action "Information" is assumed.
+- The next column contains the target type according to the resource names defined for Structural Metadata Queries, e.g. `dataflow`.
+- The next column contains the target identification information in the form *AGENCY:ARTEFACT_ID(VERSION)*(1), e.g. `AGENCY:DF(1.0.0)`.
   - If option `labels=both` (see *[here](#optional-parameters)*): The ID and the localised name of the target separated by the term ": ", e.g. `AGENCY:DF(1.0.0): Dataflow 1`.
-- The sixth column always contains the metadata attribute identification information included all parent metadata attributes separated by a dot "." in the form *METADATA_ID[.METADATA_ID]+*, complemented by at least one pair of squared brackets to indicate the position of that attribute in the current branch of nested attributes within the metadataset, e.g. `CONTACT[2].PHONE[3]`. An additional pair of squared brackets at the end of the identification information is to be used if the value of the corresponding ATTRIBUTE_VALUE column contains multiple values and/or multiple languages and in the later case encapsulates the ISO 2-letter language codes that can be encountered in that column, separated by the character in the squared brackets defined in the METADATAFLOW/METADATAPROVISION column header field, e.g. `CONTACT[2].PHONE[1][]` for multiple values or `GENERAL_INFO[1].DESCRIPTION[1][en;fr]` for multi-lingual values. 
-- The seventh column contains the attribute value, e.g. `"<p>An XHTML text</p>"`. All string/textual values (complete string between column-separating commas including ID's or language codes) should always be encapsulated in quotation marks, especially if they contain commas or quotation marks. Quotation marks in strings/textual values must always be escaped by double-quotes.
+- If option `labels=name` (see *[here](#optional-parameters)*): An additional column is added right after the target identification column with the target's localised name, e.g. `Dataflow name`.
+- The next column contains the metadata attribute identification information included all parent metadata attributes separated by a dot "." in the form *METADATA_ID[.METADATA_ID]+*, complemented by at least one pair of squared brackets to indicate the position of that attribute in the current branch of nested attributes within the metadataset, e.g. `CONTACT[2].PHONE[3]`. An additional pair of squared brackets at the end of the identification information is to be used if the value of the corresponding ATTRIBUTE_VALUE column contains multiple values and/or multiple languages and in the latter case encapsulates the ISO 2-letter language codes that can be encountered in that column, separated by the character in the squared brackets defined in the MSTRUCTURE column header field, e.g. `CONTACT[2].PHONE[1][]` for multiple values or `GENERAL_INFO[1].DESCRIPTION[1][en;fr]` for multi-lingual values.
+- If option `labels=name` (see *[here](#optional-parameters)*): An additional column is added right after the attribute identification column with the attribute's localised name, e.g. `Metadata attribute name`.
+- The next column contains the attribute value, e.g. `"<p>An XHTML text</p>"`. All string/textual values (complete string between column-separating commas including ID's or language codes) should always be encapsulated in quotation marks, especially if they contain commas or quotation marks. Quotation marks in strings/textual values must always be escaped by double-quotes.
 - The other custom columns contain any potentially localised custom content.
 
 ## Localisation 
@@ -113,13 +118,13 @@ Note: For multi-language metadata attribute values, all language versions are pr
 - Each XHTML value is to be encapsulated in double quotes, e.g. `"<p>This is some ""metadata html""</p>"`. Remember that the inner quotes need to be doubled.
 - The CSV format allows fields to contain line breaks if those fields are enclosed in double quotes. Thus XHTML values can also contain line breaks.
 
-# Optional parameter
+# Optional parameters
 
 The following optional parameter can be added to the HTTP Accept header. It needs to be separated by the character combination `"; "`.
-- labels (id|both; default=id): This parameter applies to all Nameable SDMX Artefacts contained in the header and the body of the message: 
+- labels (id|name|both; default=id): This parameter applies to all Nameable SDMX Artefacts contained in the header and the body of the message: 
   - If the parameter value is `id` then only the id of the Artefacts is displayed.
   - If the parameter value is `both` then the concatenated id and localised name of the Artefacts (see the section on [localised names](#localised-names) on how the message deals with languages) separated by `": "` are displayed. Note that the character combination `": "` could also be part of the Artefact name and could therefore occur several times within the concatenated string.
-
+  - If the parameter value is `name` then the id/value and the name of the artefacts are displayed in separate columns (see *[here](#columns)*), the ID/value column always directly preceding its related localised name column.
 Support of the above non-default parameter is not required by implementers.
 
 # Examples
@@ -128,81 +133,104 @@ Note: All examples assume the minimal HTTP Accept header: `application/vnd.sdmx.
 
 #### 1) Ordinary case
 
-	METADATAFLOW,METADATASET,ACTION,TARGET_TYPE,TARGET_ID,ATTRIBUTE_ID,ATTRIBUTE_VALUE
-	OECD:MDF(1.0.0),OECD:MDS(1.0.0),I,Dataflow,OECD:DF(1.0.0),ATTRIBUTE_1[1],CODE_ID
-	OECD:MDF(1.0.0),OECD:MDS(1.0.0),I,Dataflow,OECD:DF(1.0.0),ATTRIBUTE_1[1].ATTRIBUTE_1_2[1],"<p>An XHTML text</p>"
-	OECD:MDF(1.0.0),OECD:MDS(1.0.0),I,Dataflow,OECD:DF(1.0.0),ATTRIBUTE_1[1].ATTRIBUTE_1_2[2],"<p>Another XHTML text</p>"
-	OECD:MDF(1.0.0),OECD:MDS(1.0.0),I,Dataflow,OECD:DF(1.0.0),ATTRIBUTE_2[2],"Text with ""quotes"""
-	OECD:MDF(1.0.0),OECD:MDS(1.0.0),I,Dataflow,OECD:DF(1.0.0),ATTRIBUTE_2[3],123
+	MDSTRUCTURE,MDSTRUCTURE_ID,METADATASET,ACTION,TARGET_TYPE,TARGET_ID,ATTRIBUTE_ID,ATTRIBUTE_VALUE
+	metadataflow,OECD:MDF(1.0.0),OECD:MDS(1.0.0),I,Dataflow,OECD:DF(1.0.0),ATTRIBUTE_1[1],CODE_ID
+	metadataflow,OECD:MDF(1.0.0),OECD:MDS(1.0.0),I,Dataflow,OECD:DF(1.0.0),ATTRIBUTE_1[1].ATTRIBUTE_1_2[1],"<p>An XHTML text</p>"
+	metadataflow,OECD:MDF(1.0.0),OECD:MDS(1.0.0),I,Dataflow,OECD:DF(1.0.0),ATTRIBUTE_1[1].ATTRIBUTE_1_2[2],"<p>Another XHTML text</p>"
+	metadataflow,OECD:MDF(1.0.0),OECD:MDS(1.0.0),I,Dataflow,OECD:DF(1.0.0),ATTRIBUTE_2[2],"Text with ""quotes"""
+	metadataflow,OECD:MDF(1.0.0),OECD:MDS(1.0.0),I,Dataflow,OECD:DF(1.0.0),ATTRIBUTE_2[3],123
 
 Note: The following default parameter settings are automatically applied:
 - labels=id
 
-#### 2) Metadata attribute with multiple values, metadata attributes with multi-lingual values: Variant A
+#### 2) Metadata attribute with multiple values, metadata attributes with multi-lingual values
 
-	METADATAFLOW[;],METADATASET,ACTION,TARGET_TYPE,TARGET_ID,ATTRIBUTE_ID,ATTRIBUTE_VALUE
-	OECD:MDF(1.0.0),OECD:MDS(1.0.0),I,Dataflow,OECD:DF(1.0.0),ATTRIBUTE_1[1],CODE_ID
-	OECD:MDF(1.0.0),OECD:MDS(1.0.0),I,Dataflow,OECD:DF(1.0.0),ATTRIBUTE_1[1].ATTRIBUTE_1_2[1][en;fr],"en:""<p>An XHTML text</p>"";fr:""<p>Un texte XHTML</p>"""
-	OECD:MDF(1.0.0),OECD:MDS(1.0.0),I,Dataflow,OECD:DF(1.0.0),ATTRIBUTE_1[1].ATTRIBUTE_1_2[2][en;fr],"en:""<p>Another XHTML text</p>"";fr:""<p>Un autre texte XHTML</p>"""
-	OECD:MDF(1.0.0),OECD:MDS(1.0.0),I,Dataflow,OECD:DF(1.0.0),ATTRIBUTE_2[2],"Text with ""quotes"""
-	OECD:MDF(1.0.0),OECD:MDS(1.0.0),I,Dataflow,OECD:DF(1.0.0),ATTRIBUTE_2[3][],Text 1;Text 2;Text 3
+	MDSTRUCTURE[;],MDSTRUCTURE_ID,METADATASET,ACTION,TARGET_TYPE,TARGET_ID,ATTRIBUTE_ID,ATTRIBUTE_VALUE
+	metadataflow,OECD:MDF(1.0.0),OECD:MDS(1.0.0),I,Dataflow,OECD:DF(1.0.0),ATTRIBUTE_1[1],CODE_ID
+	metadataflow,OECD:MDF(1.0.0),OECD:MDS(1.0.0),I,Dataflow,OECD:DF(1.0.0),ATTRIBUTE_1[1].ATTRIBUTE_1_2[1][en;fr],"en:""<p>An XHTML text</p>"";fr:""<p>Un texte XHTML</p>"""
+	metadataflow,OECD:MDF(1.0.0),OECD:MDS(1.0.0),I,Dataflow,OECD:DF(1.0.0),ATTRIBUTE_1[1].ATTRIBUTE_1_2[2][en;fr],"en:""<p>Another XHTML text</p>"";fr:""<p>Un autre texte XHTML</p>"""
+	metadataflow,OECD:MDF(1.0.0),OECD:MDS(1.0.0),I,Dataflow,OECD:DF(1.0.0),ATTRIBUTE_2[2],"Text with ""quotes"""
+	metadataflow,OECD:MDF(1.0.0),OECD:MDS(1.0.0),I,Dataflow,OECD:DF(1.0.0),ATTRIBUTE_2[3][],Text 1;Text 2;Text 3
 
-#### 3) Condensed format: Variant B
+#### 3) Condensed flavour
 
-	METADATAFLOW[;OECD:MDF(1.0.0)],METADATASET[OECD:MDS(1.0.0)],ACTION,TARGET_TYPE[Dataflow],TARGET_ID[OECD:DF(1.0.0)],ATTRIBUTE_ID,ATTRIBUTE_VALUE
-	,,I,,,ATTRIBUTE_1[1],CODE_ID
-	,,I,,,ATTRIBUTE_1[1].ATTRIBUTE_1_2[1],"<p>An XHTML text</p>"
-	,,I,,,ATTRIBUTE_1[1].ATTRIBUTE_1_2[2],"<p>Another XHTML text</p>"
-	,,I,,,ATTRIBUTE_2[2],"Text with ""quotes"""
-	,,I,,,ATTRIBUTE_2[3],123
+	MDSTRUCTURE=metadataflow,MDSTRUCTURE_ID=OECD:MDF(1.0.0),METADATASET=OECD:MDS(1.0.0),ACTION,TARGET_TYPE=dataflow,TARGET_ID=OECD:DF(1.0.0),ATTRIBUTE_ID,ATTRIBUTE_VALUE
+	,,,I,,,ATTRIBUTE_1[1],CODE_ID
+	,,,I,,,ATTRIBUTE_1[1].ATTRIBUTE_1_2[1],"<p>An XHTML text</p>"
+	,,,I,,,ATTRIBUTE_1[1].ATTRIBUTE_1_2[2],"<p>Another XHTML text</p>"
+	,,,I,,,ATTRIBUTE_2[2],"Text with ""quotes"""
+	,,,I,,,ATTRIBUTE_2[3],123
 
-#### 4) Metadata attributes with multiple values, metadata attributes with multi-lingual values, condensed format: Variant B
+#### 4) Metadata attributes with multiple values, metadata attributes with multi-lingual values, condensed flavour
 
-	METADATAFLOW[;OECD:MDF(1.0.0)],METADATASET[OECD:MDS(1.0.0)],ACTION,TARGET_TYPE[Dataflow],TARGET_ID[OECD:DF(1.0.0)],ATTRIBUTE_ID,ATTRIBUTE_VALUE
-	,,I,,,ATTRIBUTE_1[1],CODE_ID
-	,,I,,,ATTRIBUTE_1[1].ATTRIBUTE_1_2[1][en;fr],"en:""<p>An XHTML text</p>"";fr:""<p>Un texte XHTML</p>"""
-	,,I,,,ATTRIBUTE_1[1].ATTRIBUTE_1_2[2][en;fr],"en:""<p>Another XHTML text</p>"";fr:""<p>Un autre texte XHTML</p>"""
-	,,I,,,ATTRIBUTE_2[2][],Text 1;Text 2;Text 3
-	,,I,,,ATTRIBUTE_2[3][],123;456
+	MDSTRUCTURE[;]=metadataflow,MDSTRUCTURE_ID=OECD:MDF(1.0.0),METADATASET=OECD:MDS(1.0.0),ACTION,TARGET_TYPE=dataflow,TARGET_ID=OECD:DF(1.0.0),ATTRIBUTE_ID,ATTRIBUTE_VALUE
+	,,,I,,,ATTRIBUTE_1[1],CODE_ID
+	,,,I,,,ATTRIBUTE_1[1].ATTRIBUTE_1_2[1][en;fr],"en:""<p>An XHTML text</p>"";fr:""<p>Un texte XHTML</p>"""
+	,,,I,,,ATTRIBUTE_1[1].ATTRIBUTE_1_2[2][en;fr],"en:""<p>Another XHTML text</p>"";fr:""<p>Un autre texte XHTML</p>"""
+	,,,I,,,ATTRIBUTE_2[2][],Text 1;Text 2;Text 3
+	,,,I,,,ATTRIBUTE_2[3][],123;456
   
-#### 5) Localisation: HTTP Accept header: `application/vnd.sdmx.metadata+csv; version=1.0.0; labels=both`, HTTP Accept-Language header: `fr-FR, en;q=0.7`, metadata attribute with multiple values, metadata attributes with multi-lingual values, Variant C
+#### 5) Localisation: HTTP Accept header: `application/vnd.sdmx.metadata+csv; version=1.0.0; labels=both`, HTTP Accept-Language header: `fr-FR, en;q=0.7`, metadata attribute with multiple values, metadata attributes with multi-lingual values, condensed flavour
 
-	METADATAFLOW[|OECD:MDF(1.0.0): Metadata flow d'exemple];METADATASET[OECD:MDS(1.0.0): Metadataset d'exemple];ACTION;TARGET_TYPE[Dataflow];TARGET_ID[OECD:DF(1.0.0): Dataflow name d'exemple];ATTRIBUTE_ID;ATTRIBUTE_VALUE
-	;;I;;;ATTRIBUTE_1[1];CODE_ID
-	;;I;;;ATTRIBUTE_1[1].ATTRIBUTE_1_2[1][en;fr];"en:""<p>An XHTML text</p>""|fr:""<p>Un texte XHTML</p>"""
-	;;I;;;ATTRIBUTE_1[1].ATTRIBUTE_1_2[2][en;fr];"en:""<p>Another XHTML text</p>""|fr:""<p>Un autre texte XHTML</p>"""
-	;;I;;;ATTRIBUTE_2[2];"Text with ""quotes"""
-	;;I;;;ATTRIBUTE_2[3][];123|456
+	MDSTRUCTURE[|]=metadataflow,MDSTRUCTURE_ID=OECD:MDF(1.0.0): Metadata flow d'exemple;METADATASET=OECD:MDS(1.0.0): Metadataset d'exemple;ACTION;TARGET_TYPE=dataflow;TARGET_ID=OECD:DF(1.0.0): Dataflow name d'exemple;ATTRIBUTE_ID;ATTRIBUTE_VALUE
+	;;;I;;;ATTRIBUTE_1[1]: Attribut d'exemple 1;CODE_ID
+	;;;I;;;ATTRIBUTE_1[1].ATTRIBUTE_1_2[1][en|fr]: Attribut d'exemple 12;"en:""<p>An XHTML text</p>""|fr:""<p>Un texte XHTML</p>"""
+	;;;I;;;ATTRIBUTE_1[1].ATTRIBUTE_1_2[2][en|fr]: Attribut d'exemple 12;"en:""<p>Another XHTML text</p>""|fr:""<p>Un autre texte XHTML</p>"""
+	;;;I;;;ATTRIBUTE_2[2]: Attribut d'exemple 2;"Text with ""quotes"""
+	;;;I;;;ATTRIBUTE_2[3][]: Attribut d'exemple 2;123|456
 
 Note that in this example the client prefers French (fr) language with the France (FR) locale, but will also accept any type of English. Therefore, in the message the French language with the France locale is applied, transforming also the field separator from comma (,) to semicolon (;), and the decimal separator from dot (.) to comma (,).
 
-#### 6) Localisation: HTTP Accept header: `application/vnd.sdmx.metadata+csv; version=1.0.0; labels=both`, HTTP Accept-Language header: `fr-FR, en;q=0.7`, metadata attribute with multiple values, metadata attributes with multi-lingual values, different metadata set and targets, Variant C
+#### 6) Localisation: HTTP Accept header: `application/vnd.sdmx.metadata+csv; version=1.0.0; labels=name`, HTTP Accept-Language header: `fr-FR, en;q=0.7`, metadata attribute with multiple values, metadata attributes with multi-lingual values, different metadata set and targets, condensed flavour
 
-	METADATAFLOW[|OECD:MDF(1.0.0): Metadata flow d'exemple];METADATASET;ACTION;TARGET_TYPE;TARGET_ID;ATTRIBUTE_ID;ATTRIBUTE_VALUE
-	;OECD:MDS(1.0.0): Metadataset d'exemple;I;Dataflow;OECD:DF(1.0.0): Dataflow name d'exemple;ATTRIBUTE_1[1];CODE_ID
-	;OECD:MDS(1.0.0): Metadataset d'exemple;I;Dataflow;OECD:DF(1.0.0): Dataflow name d'exemple;ATTRIBUTE_1[1].ATTRIBUTE_1_2[1][en;fr];"en:""<p>An XHTML text</p>""|fr:""<p>Un texte XHTML</p>"""
-	;OECD:MDS(1.0.0): Metadataset d'exemple;I;Dataflow;OECD:DF(1.0.0): Dataflow name d'exemple;ATTRIBUTE_1[1].ATTRIBUTE_1_2[2][en;fr];"en:""<p>Another XHTML text</p>""|fr:""<p>Un autre texte XHTML</p>"""
-	;OECD:MDS(1.0.0): Metadataset d'exemple;I;Dataflow;OECD:DF(1.0.0): Dataflow name d'exemple;ATTRIBUTE_2[2];"Text with ""quotes"""
-	;OECD:MDS(1.0.0): Metadataset d'exemple;I;Dataflow;OECD:DF(1.0.0): Dataflow name d'exemple;ATTRIBUTE_2[3][];123|456
-	;OECD:MDS(1.1.0): Nouveau metadataset d'exemple;I;Dataflow;OECD:DF(1.1.0): Nouveau dataflow name d'exemple;ATTRIBUTE_1[1];CODE_ID
+	MDSTRUCTURE[|]=metadataflow;MDSTRUCTURE_ID=OECD:MDF(1.0.0);MDSTRUCTURE_NAME=Metadata flow d'exemple;METADATASET;METADATASET_NAME;ACTION;TARGET_TYPE;TARGET_ID;TARGET_NAME;ATTRIBUTE_ID;ATTRIBUTE_NAME;ATTRIBUTE_VALUE
+	;;;OECD:MDS(1.0.0);Metadataset d'exemple;I;dataflow;OECD:DF(1.0.0);Dataflow name d'exemple;ATTRIBUTE_1[1];Attribut d'exemple 1;CODE_ID
+	;;;OECD:MDS(1.0.0);Metadataset d'exemple;I;dataflow;OECD:DF(1.0.0);Dataflow name d'exemple;ATTRIBUTE_1[1].ATTRIBUTE_1_2[1][en|fr];Attribut d'exemple 12;"en:""<p>An XHTML text</p>""|fr:""<p>Un texte XHTML</p>"""
+	;;;OECD:MDS(1.0.0);Metadataset d'exemple;I;dataflow;OECD:DF(1.0.0);Dataflow name d'exemple;ATTRIBUTE_1[1].ATTRIBUTE_1_2[2][en|fr];Attribut d'exemple 12;"en:""<p>Another XHTML text</p>""|fr:""<p>Un autre texte XHTML</p>"""
+	;;;OECD:MDS(1.0.0);Metadataset d'exemple;I;dataflow;OECD:DF(1.0.0);Dataflow name d'exemple;ATTRIBUTE_2[2];Attribut d'exemple 2;"Text with ""quotes"""
+	;;;OECD:MDS(1.0.0);Metadataset d'exemple;I;dataflow;OECD:DF(1.0.0);Dataflow name d'exemple;ATTRIBUTE_2[3][];Attribut d'exemple 2;123|456
+	;;;OECD:MDS(1.1.0);Nouveau metadataset d'exemple;I;dataflow;OECD:DF(1.1.0);Nouveau dataflow name d'exemple;ATTRIBUTE_1[1];Attribut d'exemple 1;CODE_ID
 
-#### 7) Non-coded multi-lingual multi-valued metadata attributes, varying metadataflows, Variant A
+#### 7) Non-coded multi-lingual multi-valued metadata attributes, varying metadataflows
 
-	METADATAFLOW[;],METADATASET,ACTION,TARGET_TYPE,TARGET_ID,ATTRIBUTE_ID,ATTRIBUTE_VALUE
-	OECD:MDF(1.0.0),OECD:MDS(1.0.0),I,Dataflow,OECD:DF(1.0.0),ATTRIBUTE_1[1][en;fr;de],"""en:Value1;fr:Valeur1"";""en:Value2;de:Wert2"""
-	OECD:MDF(1.1.0),OECD:MDS(1.1.0),I,Dataflow,OECD:DF(1.1.0),ATTRIBUTE_1[1][en;fr;de],"""en:Value1;fr:Valeur1"";""en:Value2;de:Wert2"""
+	MDSTRUCTURE[;],MDSTRUCTURE_ID,METADATASET,ACTION,TARGET_TYPE,TARGET_ID,ATTRIBUTE_ID,ATTRIBUTE_VALUE
+	metadataflow,OECD:MDF(1.0.0),OECD:MDS(1.0.0),I,Dataflow,OECD:DF(1.0.0),ATTRIBUTE_1[1][en;fr;de],"""en:Value1;fr:Valeur1"";""en:Value2;de:Wert2"""
+	metadataflow,OECD:MDF(1.1.0),OECD:MDS(1.1.0),I,Dataflow,OECD:DF(1.1.0),ATTRIBUTE_1[1][en;fr;de],"""en:Value1;fr:Valeur1"";""en:Value2;de:Wert2"""
 
-#### 8) Metadata for a non-versioned(1) data provision agreement, Variant B
+#### 8) Metadata for a non-versioned(1) data provision agreement, condensed flavour
 
-	METADATAPROVISION[;OECD:DF],METADATASET,ACTION,TARGET_TYPE,TARGET_ID,ATTRIBUTE_ID,ATTRIBUTE_VALUE
+	metadataprovision[;OECD:DF],METADATASET,ACTION,TARGET_TYPE,TARGET_ID,ATTRIBUTE_ID,ATTRIBUTE_VALUE
 	,OECD:MDS(1.0.0),I,Dataflow,OECD:DF(1.0.0),ATTRIBUTE_1[1],CODE_ID
 
 #### 9) Non-coded XHTML-formatted metadata attribute values with line-breaks 
 
-	METADATAFLOW[;OECD:MDF(1.0.0)],METADATASET[OECD:MDS(1.0.0)],ACTION,TARGET_TYPE[Dataflow],TARGET_ID[OECD:DF(1.0.0)],ATTRIBUTE_ID,ATTRIBUTE_VALUE
-	,,I,,,ATTRIBUTE_1[1],"<p>This is some ""xhtml"" with a line
+	MDSTRUCTURE[;]=metadataflow,MDSTRUCTURE_ID=OECD:MDF(1.0.0),METADATASET=OECD:MDS(1.0.0),ACTION,TARGET_TYPE=dataflow,TARGET_ID=OECD:DF(1.0.0),ATTRIBUTE_ID,ATTRIBUTE_VALUE
+	,,,I,,,ATTRIBUTE_1[1],"<p>This is some ""xhtml"" with a line
 	break</p>"
-	,,I,,,ATTRIBUTE_1[2],"<p>This is some other ""xhtml""</p>"
+	,,,I,,,ATTRIBUTE_1[2],"<p>This is some other ""xhtml""</p>"
+
+#### 15) Deleting specific metadata attribute values: the values that correspond to the attribute identifiers are deleted
+
+	MDSTRUCTURE[;],MDSTRUCTURE_ID,METADATASET,ACTION,TARGET_TYPE,TARGET_ID,ATTRIBUTE_ID,ATTRIBUTE_VALUE
+	metadataflow,OECD:MDF(1.0.0),OECD:MDS(1.0.0),D,Dataflow,OECD:DF(1.0.0),ATTRIBUTE_1[1],
+	metadataflow,OECD:MDF(1.1.0),OECD:MDS(1.1.0),D,Dataflow,OECD:DF(1.1.0),ATTRIBUTE_1[1],
+or
+
+	MDSTRUCTURE[;],MDSTRUCTURE_ID,METADATASET,ACTION,TARGET_TYPE,TARGET_ID,ATTRIBUTE_ID
+	metadataflow,OECD:MDF(1.0.0),OECD:MDS(1.0.0),D,Dataflow,OECD:DF(1.0.0),ATTRIBUTE_1[1]
+	metadataflow,OECD:MDF(1.1.0),OECD:MDS(1.1.0),D,Dataflow,OECD:DF(1.1.0),ATTRIBUTE_1[1]
+
+#### 18) Deleting a whole metadataset:
+
+	MDSTRUCTURE[;],MDSTRUCTURE_ID,METADATASET,ACTION
+	metadataflow,OECD:MDF(1.0.0),OECD:MDS(1.0.0),D
+	metadataflow,OECD:MDF(1.1.0),OECD:MDS(1.1.0),D
+
+#### 18) Deleting all metadatasets defined by a specific metadata artefact:
+
+	MDSTRUCTURE[;],MDSTRUCTURE_ID,METADATASET,ACTION
+	metadataflow,OECD:MDF(1.0.0),,D
+	metadataflow,OECD:MDF(1.1.0),,D
 
 ------------------------
 
