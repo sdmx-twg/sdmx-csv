@@ -6,7 +6,7 @@ SDMX-CSV integrates with other specifications, i.e.:
 - The SDMX API RESTful specification (e.g. content negotiation with mime-type to get SDMX-CSV representations, specific formats for responses, language selection through HTTP content negotiation)
 - The [RFC 4180](https://tools.ietf.org/html/rfc4180) specification
 
-##	RFC 4180: A common format for CSV files
+## RFC 4180: A common format for CSV files
 In order to benefit from best practices, SDMX-CSV is based on the rules defined in the [RFC 4180](https://tools.ietf.org/html/rfc4180), which defines a common format and MIME Type for CSV files. It is advised to read the (very short) RFC for a full list of requirements but, in a nutshell, the RFC defines rules such as:
 - How the CSV file should be structured (the RFC specifies that all records must have an identical structure (determined column number), like when using an SDMX "flat" representation for data);
 - When double-quotes should be used and how to escape them when needed;
@@ -27,8 +27,8 @@ The SDMX-CSV format is flexible enough in its representation to support the need
 ## Columns
 
 - The first column is always used for the structure type: dataflow, data structure definition or data provision agreement.
-- The second column is always used for the structure's identification.
-- The third column is always used for the action to be performed.
+- The next one or two columns are always used for the structure's identification.
+- The next column is always used for the action to be performed.
 - The next up to two columns are used for the series and/or observation key.
 - Each Data Structure Definition (DSD) component (dimensions, attributes (including those defined through a referenced Metadata Structure Definition (MSD)), measures) included in the message is represented in one column. SDMX web services should return the columns in the order of components as defined in the Data Structure Definition. However, any order of these columns is valid for data uploads to SDMX-consuming systems.
 - Only all those dimension columns have to be present, that are required to uniquely identify the concerned attributes and/or measures.
@@ -39,7 +39,7 @@ The SDMX-CSV format is flexible enough in its representation to support the need
 
 ## Column headers (first row)
 
-- The header field of the first column always starts with one of the term `STRUCTURE`.
+- The header field of the first column always contains the term `STRUCTURE`.
   - This field must be extended with a sub-field delimiter encapsulated in squared brackets "[]", e.g. `STRUCTURE[;]`, in case the message contains multi-valued or multi-language measure or attribute values.
 - The header field of the second column always contains the term `STRUCTURE_ID`.
 - If option `labels=name` (see *[here](#optional-parameters)*): An additional column is added right after the artefact identification column containing the term `STRUCTURE_NAME`.
@@ -50,11 +50,11 @@ The SDMX-CSV format is flexible enough in its representation to support the need
   - If option `labels=both` (see *[here](#optional-parameters)*): The ID and the localised name of the component reported in that column separated by the term ": ", e.g. `DIM1: Dimension 1`.
   - If option `labels=name` (see *[here](#optional-parameters)*): An additional column is added right after the component identification column containing the localised name of the component reported in the previous column.
 - Any other custom column contains a custom but unique term, e.g. `UPDATED`.
-- In case all contained sub-sequent rows contain strictly the same information, it is possible to condense the message by extending the related column header field with the equal character "=" and the content of the subsequent rows for this column, e.g. `STRUCTURE[;]=DATAFLOW`, `STRUCTURE_ID=ESTAT:NA_MAIN(1.6.0)`, `STRUCTURE_ID=ESTAT:NA_MAIN(1.6.0): National Accounts Main Aggregates`, `ACTION=I`. In this case, the content of the subsequent rows for this column can be left empty.
+- In case all contained sub-sequent rows contain strictly the same information, it is possible to condense the message by extending the related column header field with the equal character "=" and the content of the subsequent rows for this column, e.g. `STRUCTURE[;]=dataflow`, `STRUCTURE_ID=ESTAT:NA_MAIN(1.6.0)`, `STRUCTURE_ID=ESTAT:NA_MAIN(1.6.0): National Accounts Main Aggregates`, `ACTION=I`. In this case, the content of the subsequent rows for this column can be left empty.
 
 ## Column content (all rows after header)
 
-- The first column contains: `DATAFLOW`, `DATASTRUCTURE` or `DATAPROVISION`, depending on type of artefact for which the data contained in the message are defined: dataflow, data structure definition or data provision agreement.
+- The first column contains: `dataflow`, `datastructure` or `dataprovision`, depending on type of artefact for which the data contained in the message are defined: dataflow, data structure definition or data provision agreement.
 - The second column contains:
   - Default: The artefact identification information in the form *AGENCY:ARTEFACT_ID(VERSION)*(1), e.g. `ESTAT:NA_MAIN(1.6.0)`.
   - If option `labels=both` (see *[here](#optional-parameters)*): The artefact identification information and its localised name separated by the term ": ", e.g. `ESTAT:NA_MAIN(1.6.0): National Accounts Main Aggregates`.
@@ -72,7 +72,7 @@ The SDMX-CSV format is flexible enough in its representation to support the need
   - If option `labels=name` (see *[here](#optional-parameters)*): An additional column is added right after the component identification column containing the localised name, e.g. `A value name`, of the component value reported in the previous column.
   - For rows containing the information related to one specific observation, the related values for attributes attached to partial keys need to be replicated.
   - For rows containing the information related to one or more attributes attached to partial keys, in addition to these attributes only the components that are part of the partial key need to be filled, all others can be left empty. 
-  - For rows containing information to be deleted, the deletion is assumed to take place of the lowest level of detail provided in the message. For that purpose, to be deleted measure or attribute values are marked with the dash character "-". Delete operations allow wildcarding dimensions by leaving the corresponding dimension field empty.
+  - For rows containing information to be deleted, the deletion is assumed to take place of the lowest level of detail provided in the message. For that purpose, to be deleted measure or attribute values are non-empty, e.g. marked with the dash character "-". Delete operations allow wildcarding dimensions by leaving the corresponding dimension field empty.
 - The other custom columns contain any potentially localised custom content.
 
 ## Localisation 
@@ -119,7 +119,7 @@ Optional parameters can be added to the HTTP Accept header. They need to be sepa
 - labels (id|name|both; default=id): This parameter applies to all Nameable SDMX Artefacts contained in the header and the body of the message: 
   - If the parameter value is `id` then only the id/value of the artefacts is displayed.
   - If the parameter value is `both` then the concatenated id/value and localised name of the artefacts (see the section on [localised names](#localised-names) on how the message deals with languages) separated by `": "` are displayed. Note that the character combination `": "` could also be part of the artefact name and could therefore occur several times within the concatenated string.
-  - If the parameter value is `name` then the id/value and the name of the artefacts are displayed in separate columns (see *[here](#columns)*), the ID/value column always directly preceeding its related localised name column.
+  - If the parameter value is `name` then the id/value and the name of the artefacts are displayed in separate columns (see *[here](#columns)*), the ID/value column always directly preceding its related localised name column.
 - timeFormat (original|normalized; default=original):
   - If the parameter value is `original` then the time dimension (*TIME-PERIOD*) values are displayed in the SDMX *TIME_PERIOD* format as originally recorded.
   - If the parameter value is `normalized` then the time dimension (*TIME_PERIOD*) values are converted to the most granular [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html) representation taking into account the highest frequency of the data in the message and the moment in time when the lower-frequency values were collected (which, e.g. at the ECB, is typically either at the beginning, middle or end of the reporting period). This eases comparisons and business analysis of multi-frequency values, e.g. in pivot tables. As an example, if annual and daily data are available in the message and the annual data were collected at the end of the reporting period, the formatted value for the annual period 2014 becomes 2014-12-31.
@@ -136,8 +136,8 @@ Note: All examples assume the minimal HTTP Accept header: `application/vnd.sdmx.
 #### 1) Ordinary case
 
 	STRUCTURE,STRUCTURE_ID,ACTION,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_2,ATTR_3,ATTR_1,UPDATED
-	DATAFLOW,ESTAT:NA_MAIN(1.6.0),I,A,B,2014-01,12.4,Y,"Normal, special and other values",N,2021-01-22T13:15:41Z
-	DATAFLOW,ESTAT:NA_MAIN(1.6.0),I,A,B,2014-02,10.8,Y,"Normal, special and other values",Y,2021-01-22T13:15:41Z
+	dataflow,ESTAT:NA_MAIN(1.6.0),I,A,B,2014-01,12.4,Y,"Normal, special and other values",N,2021-01-22T13:15:41Z
+	dataflow,ESTAT:NA_MAIN(1.6.0),I,A,B,2014-02,10.8,Y,"Normal, special and other values",Y,2021-01-22T13:15:41Z
 
 Note: The following default parameter settings are automatically applied:
 - labels=id
@@ -147,18 +147,18 @@ Note: The following default parameter settings are automatically applied:
 #### 2) Components in any order, missing component(s), component with multiple values
 
 	STRUCTURE[;],STRUCTURE_ID,ACTION,OBS_VALUE1,OBS_VALUE2,ATTR_3,ATTR_1[],DIM_2,DIM_1,DIM_3
-	DATAFLOW,ESTAT:NA_MAIN(1.6.0),I,12.4,12.5,"Normal, special and other values",X;Y,B,A,2014-01
-	DATAFLOW,ESTAT:NA_MAIN(1.6.0),I,10.8,10.9,"Normal, special and other values",X;Z,B,A,2014-02
+	dataflow,ESTAT:NA_MAIN(1.6.0),I,12.4,12.5,"Normal, special and other values",X;Y,B,A,2014-01
+	dataflow,ESTAT:NA_MAIN(1.6.0),I,10.8,10.9,"Normal, special and other values",X;Z,B,A,2014-02
 
-#### 3) Components in any order and missing component, HTTP Accept header: `application/vnd.sdmx.data+csv; version=1.0.0; key=series`, condenced flavour
+#### 3) Components in any order and missing component, HTTP Accept header: `application/vnd.sdmx.data+csv; version=1.0.0; key=series`, condensed flavour
 
-	STRUCTURE[;]=DATAFLOW,STRUCTURE_ID=ESTAT:NA_MAIN(1.6.0),ACTION=I,SERIES_KEY,OBS_VALUE1,OBS_VALUE2,ATTR_3,ATTR_1,DIM_2,DIM_1,DIM_3
+	STRUCTURE[;]=dataflow,STRUCTURE_ID=ESTAT:NA_MAIN(1.6.0),ACTION=I,SERIES_KEY,OBS_VALUE1,OBS_VALUE2,ATTR_3,ATTR_1,DIM_2,DIM_1,DIM_3
 	,,,A.B,12.4,12.5,"Normal, special and other values",N,B,A,2014-01
 	,,,A.B,10.8,10.9,"Normal, special and other values",Y,B,A,2014-02
 
 #### 4) Localisation: HTTP Accept header: `application/vnd.sdmx.data+csv; version=1.0.0; labels=both; key=both`, HTTP Accept-Language header: `fr-FR, en;q=0.7`, condensed flavour
 
-	STRUCTURE[|]=DATAFLOW;STRUCTURE_ID=ESTAT:NA_MAIN(1.6.0): Principaux agrégats des comptes nationaux;ACTION=I;SERIES_KEY;OBS_KEY;DIM_1: Dimension 1;DIM_2: Dimension 2;DIM_3: Dimension 3;OBS_VALUE: Observation value;ATTR_2: Attribut 2;ATTR_3: Attribut 3;ATTR_1: Attribut 1
+	STRUCTURE[|]=dataflow;STRUCTURE_ID=ESTAT:NA_MAIN(1.6.0): Principaux agrégats des comptes nationaux;ACTION=I;SERIES_KEY;OBS_KEY;DIM_1: Dimension 1;DIM_2: Dimension 2;DIM_3: Dimension 3;OBS_VALUE: Observation value;ATTR_2: Attribut 2;ATTR_3: Attribut 3;ATTR_1: Attribut 1
 	;;;A.B;A.B.2014-01;A: Value A;B: Value B;2014-01: 2014-01;12,4;Y: Oui;Normal, special and other values;N: Non
 	;;;A.B;A.B.2014-02;A: Value A;B: Value B;2014-02: 2014-02;10,8;Y: Oui;Normal, special and other values;Y: Oui
 
@@ -166,96 +166,96 @@ Note that in this example the client prefers French (fr) language with the Franc
 
 #### 5) HTTP Accept header: `application/vnd.sdmx.data+csv; version=1.0.0; labels=both; timeFormat=normalized`, condensed flavour
 
-	STRUCTURE[;]=DATAFLOW,STRUCTURE_ID=ESTAT:NA_MAIN(1.6.0): National Accounts Main Aggregates,ACTION=I,DIM_1: Dimension 1,DIM_2: Dimension 2,DIM_3: Dimension 3,OBS_VALUE: Observation value,ATTR_2: Attribute 2,ATTR_3: Attribute 3,ATTR_1: Attribute 1
+	STRUCTURE[;]=dataflow,STRUCTURE_ID=ESTAT:NA_MAIN(1.6.0): National Accounts Main Aggregates,ACTION=I,DIM_1: Dimension 1,DIM_2: Dimension 2,DIM_3: Dimension 3,OBS_VALUE: Observation value,ATTR_2: Attribute 2,ATTR_3: Attribute 3,ATTR_1: Attribute 1
 	,,,A: Value A,B: Value B,2014-01-01,12.4,Y: Yes,"Normal, special and other values",N: No
 	,,,A: Value A,B: Value B,2014-02-01,10.8,Y: Yes,"Normal, special and other values",Y: Yes
 
 #### 6) HTTP Accept header: `application/vnd.sdmx.data+csv; version=1.0.0; labels=name`, condensed flavour
 
-	STRUCTURE=DATAFLOW,STRUCTURE_ID=ESTAT:NA_MAIN(1.6.0),STRUCTURE_NAME=National Accounts Main Aggregates,ACTION=I,DIM_1=A,Dimension 1=Value A,DIM_2=B,Dimension 2=Value B,DIM_3,Dimension 3,OBS_VALUE,Observation value=,ATTR_1=Y,Attribute 1=Yes,"ATTR_2=""Normal, special and other values""",Attribute 2=,ATTR_3,Attribute 3
+	STRUCTURE=dataflow,STRUCTURE_ID=ESTAT:NA_MAIN(1.6.0),STRUCTURE_NAME=National Accounts Main Aggregates,ACTION=I,DIM_1=A,Dimension 1=Value A,DIM_2=B,Dimension 2=Value B,DIM_3,Dimension 3,OBS_VALUE,Observation value=,ATTR_1=Y,Attribute 1=Yes,"ATTR_2=""Normal, special and other values""",Attribute 2=,ATTR_3,Attribute 3
 	,,,,,,,,2014-01,2014-01,12.4,,,,,,N,No
 	,,,,,,,,2014-02,2014-02,10.8,,,,,,Y,Yes
 
 #### 7) Multi-valued components, condensed flavour
 
-	STRUCTURE[;]=DATAFLOW,STRUCTURE_ID=ESTAT:NA_MAIN(1.6.0),ACTION=I,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_1[],ATTR_2[],ATTR_3[]
+	STRUCTURE[;]=dataflow,STRUCTURE_ID=ESTAT:NA_MAIN(1.6.0),ACTION=I,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_1[],ATTR_2[],ATTR_3[]
 	,,,A,B,2014-01,12.4,Value X;Value Y,"M, N & O;P & Q",A;B;C
 	,,,A,B,2014-02,10.8,Value X;Value Y,"M, N & O;P & Q",A;C
 
 #### 8) Non-coded multi-lingual components, varying dataflows, condensed flavour
 
-	STRUCTURE[;]=DATAFLOW,STRUCTURE_ID,ACTION,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_1[en;fr]
+	STRUCTURE[;]=dataflow,STRUCTURE_ID,ACTION,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_1[en;fr]
 	,ESTAT:NA_MAIN(1.6.0),I,A,B,2014-01,12.4,en:Any Value;fr:N'importe quelle Valeur
 	,ESTAT:NA_MAIN(1.7.0),I,A,B,2014-02,10.8,"en:Value ""X"";fr:Valeur ""X"""
 
 #### 9) Non-coded multi-lingual components, varying structures, condensed flavour
 
 	STRUCTURE[;],STRUCTURE_ID,ACTION=I,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_1[en;fr]
-	DATAFLOW,ESTAT:DF_NA_MAIN(1.6.0),,A,B,2014-01,12.4,en:Any Value;fr:N'importe quelle Valeur
-	DATASTRUCTURE,ESTAT:DSD_NA_MAIN(1.7.0),,A,B,2014-02,10.8,"en:Value ""X"";fr:Valeur ""X"""
-	DATAPROVISION,ESTAT:DPA_NA_MAIN(1.8.0),,A,B,2014-03,11.2,"en:Value ""Y"";fr:Valeur ""Y"""
+	dataflow,ESTAT:DF_NA_MAIN(1.6.0),,A,B,2014-01,12.4,en:Any Value;fr:N'importe quelle Valeur
+	datastructure,ESTAT:DSD_NA_MAIN(1.7.0),,A,B,2014-02,10.8,"en:Value ""X"";fr:Valeur ""X"""
+	dataprovision,ESTAT:DPA_NA_MAIN(1.8.0),,A,B,2014-03,11.2,"en:Value ""Y"";fr:Valeur ""Y"""
 
 #### 10) Varying actions, condensed flavour
 
-	STRUCTURE=DATAFLOW,STRUCTURE_ID=ESTAT:NA_MAIN(1.6.0),ACTION,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_1
+	STRUCTURE=dataflow,STRUCTURE_ID=ESTAT:NA_MAIN(1.6.0),ACTION,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_1
 	,,A,A,B,2014-01,12.4,X
 	,,R,A,B,2014-02,10.8,Y
 
 #### 11) Data for a non-versioned(1) data structure definition
 
 	STRUCTURE,STRUCTURE_ID,ACTION,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_1
-	DATASTRUCTURE,AGENCY:DF_ID,I,A,B,2014-01,12.4,N
-	DATASTRUCTURE,AGENCY:DF_ID,I,A,B,2014-02,10.8,Y
+	datastructure,AGENCY:DF_ID,I,A,B,2014-01,12.4,N
+	datastructure,AGENCY:DF_ID,I,A,B,2014-02,10.8,Y
 
 #### 12) Attributes attached to partial keys for a data provision agreement, condensed flavour
 
-	STRUCTURE=DATAPROVISION,STRUCTURE_ID=AGENCY:DPA_ID(1.0.0),ACTION,DIM_2,DIM_3,ATTR_1
+	STRUCTURE=dataprovision,STRUCTURE_ID=AGENCY:DPA_ID(1.0.0),ACTION,DIM_2,DIM_3,ATTR_1
 	,,I,B,2014-01,N
 	,,I,B,2014-02,Y
 
 #### 13) Mixing rows for attributes attached to partial keys with rows for observations 
 
 	STRUCTURE,STRUCTURE_ID,ACTION,DIM_1,DIM_2,DIM_3,MEAS_1,ATTR_1,ATTR_2
-	DATAFLOW,AGENCY:DF_ID(1.0.0),I,A,B,2014-01,12.4,N,
-	DATAFLOW,AGENCY:DF_ID(1.0.0),I,,B,,,,Y
+	dataflow,AGENCY:DF_ID(1.0.0),I,A,B,2014-01,12.4,N,
+	dataflow,AGENCY:DF_ID(1.0.0),I,,B,,,,Y
 
 #### 14) Non-coded XHTML-formatted values with line-breaks 
 
 	STRUCTURE,STRUCTURE_ID,ACTION,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_1
-	DATAFLOW,ESTAT:NA_MAIN(1.6.0),I,A,B,2014-01,12.4,"<p>This is some ""xhtml"" with a line
+	dataflow,ESTAT:NA_MAIN(1.6.0),I,A,B,2014-01,12.4,"<p>This is some ""xhtml"" with a line
 	break</p>"
-	DATAFLOW,ESTAT:NA_MAIN(1.6.0),I,A,B,2014-02,10.8,"<p>This is some other ""xhtml""</p>"
+	dataflow,ESTAT:NA_MAIN(1.6.0),I,A,B,2014-02,10.8,"<p>This is some other ""xhtml""</p>"
 
-#### 15) Deleting specific measure and attribute values: all values marked with "-" are deleted
+#### 15) Deleting specific measure and attribute values: all non-empty values (e.g. marked with "-") are deleted
 
 	STRUCTURE,STRUCTURE_ID,ACTION,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_2,ATTR_3,ATTR_1
-	DATAFLOW,ESTAT:NA_MAIN(1.6.0),D,A,B,2014-01,-,,,
-	DATAFLOW,ESTAT:NA_MAIN(1.6.0),D,A,B,2014-02,,,-,
+	dataflow,ESTAT:NA_MAIN(1.6.0),D,A,B,2014-01,-,,,
+	dataflow,ESTAT:NA_MAIN(1.6.0),D,A,B,2014-02,,,-,
 
-#### 16) Deleting specific measure and attribute values with wildcarded dimensions: all values marked with "-" are deleted for all dimension combinations where:
+#### 16) Deleting specific measure and attribute values with wildcarded dimensions: all non-empty values (e.g. marked with "-") are deleted for all dimension combinations where:
    - row 2: DIM2=A
    - row 3: DIM2=B
 
 	STRUCTURE,STRUCTURE_ID,ACTION,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_2,ATTR_3,ATTR_1
-	DATAFLOW,ESTAT:NA_MAIN(1.6.0),D,,A,,-,,,
-	DATAFLOW,ESTAT:NA_MAIN(1.6.0),D,,B,,,,-,
+	dataflow,ESTAT:NA_MAIN(1.6.0),D,,A,,-,,,
+	dataflow,ESTAT:NA_MAIN(1.6.0),D,,B,,,,-,
 
 #### 17) Deleting whole observations with wildcarded dimensions: all observations are deleted for all dimension combinations where:
    - row 2: DIM2=A
    - row 3: DIM2=B and DIM3=C
 
 	STRUCTURE,STRUCTURE_ID,ACTION,DIM_2,DIM_3
-	DATAFLOW,ESTAT:NA_MAIN(1.6.0),D,A,,
-	DATAFLOW,ESTAT:NA_MAIN(1.6.0),D,B,C,
+	dataflow,ESTAT:NA_MAIN(1.6.0),D,A,,
+	dataflow,ESTAT:NA_MAIN(1.6.0),D,B,C,
 
 #### 18) Deleting all data for a data structure definition:
 
 	STRUCTURE,STRUCTURE_ID,ACTION
-	DATASTRUCTURE,ESTAT:DSD_NA_MAIN(1.6.0),D
+	datastructure,ESTAT:DSD_NA_MAIN(1.6.0),D
 or
 
 	STRUCTURE,STRUCTURE_ID,ACTION,DIM_1,DIM_2,DIM_3
-	DATASTRUCTURE,ESTAT:DSD_NA_MAIN(1.6.0),D,,,
+	datastructure,ESTAT:DSD_NA_MAIN(1.6.0),D,,,
 
 ------------------------
 
