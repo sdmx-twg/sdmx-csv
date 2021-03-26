@@ -22,7 +22,7 @@ The SDMX-CSV format is flexible enough in its representation to support the need
 
 - In order to ensure the identifiability of the data contained in the message, the header row containing the column headers is mandatory and its content is well-defined. 
 - After the mandatory header row, each row contains the information related to one specific observation or to one or more attributes attached to partial keys. For `Delete` actions a row can also concern several observations if dimensions are wildcarded.
-- In [RFC 4180](https://tools.ietf.org/html/rfc4180), csv stands for "comma-separated values". However, while SDMX-CSV uses indeed the "comma" (%x2C) as the default field separator, it adopts the wider interpretation of csv as "character-separated values". It is recommended for implementers to provide SDMX-CSV messages according to the locale of the user (e.g. as indicated in the http Accept-Language header). It means that e.g. the semi-colon ‘;’ (as used typically in specific regions or countries) is acceptable as separator. See also the fourth example below. Note that the separator used in a message can be determined by retrieving the character that follows the header field of the first column which extended by a squared bracket term (see below). Implementers need here to be careful since the squared bracket term can itself contain escaped (doubled) bracket characters.
+- In [RFC 4180](https://tools.ietf.org/html/rfc4180), csv stands for "comma-separated values". However, while SDMX-CSV uses indeed the "comma" (%x2C) as the default field separator, it adopts the wider interpretation of csv as "character-separated values". It is recommended for implementers to provide SDMX-CSV messages according to the locale of the user (e.g. as indicated in the http Accept-Language header). It means that e.g. the semi-colon ‘;’ (as used typically in specific regions or countries) is acceptable as separator. See also the related example below. Note that the separator used in a message can be determined by retrieving the character that follows the fixed first column header term *STRUCTURE* (which may be extended by a squared bracket term).
 
 ## Columns
 
@@ -30,7 +30,7 @@ The SDMX-CSV format is flexible enough in its representation to support the need
 - The next one or two columns are always used for the structure's identification.
 - The next column is always used for the action to be performed.
 - The next up to two columns are used for the series and/or observation key.
-- Each Data Structure Definition (DSD) component (dimensions, attributes (including those defined through a referenced Metadata Structure Definition (MSD)), measures) included in the message is represented in one column. SDMX web services should return the columns in the order of components as defined in the Data Structure Definition. However, any order of these columns is valid for data uploads to SDMX-consuming systems.
+- Each Data Structure Definition (DSD) component (dimensions, attributes (including those defined through a referenced Metadata Structure Definition (MSD)), measures) included in the message is represented in one or two columns. SDMX web services should return the columns in the order of components as defined in the Data Structure Definition. However, any order of these columns is valid for data uploads to SDMX-consuming systems.
 - Only all those dimension columns have to be present, that are required to uniquely identify the concerned attributes and/or measures.
 - Attributes can but do not need to be included even if they have a mandatory status.
 - Measures can but do not have to be included.
@@ -50,13 +50,12 @@ The SDMX-CSV format is flexible enough in its representation to support the need
   - If option `labels=both` (see *[here](#optional-parameters)*): The ID and the localised name of the component reported in that column separated by the term ": ", e.g. `DIM1: Dimension 1`.
   - If option `labels=name` (see *[here](#optional-parameters)*): An additional column is added right after the component identification column containing the localised name of the component reported in the previous column.
 - Any other custom column contains a custom but unique term, e.g. `UPDATED`.
-- In case all contained sub-sequent rows contain strictly the same information, it is possible to condense the message by extending the related column header field with the equal character "=" and the content of the subsequent rows for this column, e.g. `STRUCTURE[;]=dataflow`, `STRUCTURE_ID=ESTAT:NA_MAIN(1.6.0)`, `STRUCTURE_ID=ESTAT:NA_MAIN(1.6.0): National Accounts Main Aggregates`, `ACTION=I`. In this case, the content of the subsequent rows for this column can be left empty.
 
 ## Column content (all rows after header)
 
-- The first column contains: `dataflow`, `datastructure` or `dataprovision`, depending on type of artefact for which the data contained in the message are defined: dataflow, data structure definition or data provision agreement.
+- The first column contains: `dataflow`, `datastructure` or `dataprovision`, depending on type of artefact for which the data contained in the row are defined: dataflow, data structure definition or data provision agreement.
 - The second column contains:
-  - Default: The artefact identification information in the form *AGENCY:ARTEFACT_ID(VERSION)*(1), e.g. `ESTAT:NA_MAIN(1.6.0)`.
+  - Default: The artefact identification information for the data in the row in the form *AGENCY:ARTEFACT_ID(VERSION)*(1), e.g. `ESTAT:NA_MAIN(1.6.0)`.
   - If option `labels=both` (see *[here](#optional-parameters)*): The artefact identification information and its localised name separated by the term ": ", e.g. `ESTAT:NA_MAIN(1.6.0): National Accounts Main Aggregates`.
 - If option `labels=name` (see *[here](#optional-parameters)*): An additional column is added right after the artefact identification column with the artefact's localised name, e.g. `National Accounts Main Aggregates`.
 - The next column contains one character representing one of the current 4 action types:
@@ -69,10 +68,10 @@ The SDMX-CSV format is flexible enough in its representation to support the need
 - The other columns for components contain:
   - Default: The ID(s) (if coded) or value(s) (if non-coded) for the component values reported in that column for the corresponding observation, e.g. `A`.
   - If option `labels=both` (see *[here](#optional-parameters)*): The ID(s) and the localised name separated by the term ": " (if coded) or the value(s) (if non-coded) for the component values reported in that column for the corresponding observation, e.g. `A: A value name`.
-  - If option `labels=name` (see *[here](#optional-parameters)*): An additional column is added right after the component identification column containing the localised name, e.g. `A value name`, of the component value reported in the previous column.
-  - For rows containing the information related to one specific observation, the related values for attributes attached to partial keys need to be replicated.
+  - If option `labels=name` (see *[here](#optional-parameters)*): An additional column is added right after the component identification column containing the localised name, e.g. `A value name`, of the component value reported in the previous column. It is empty if the value has no localised name.
+  - For rows containing the information related to one specific observation, the related values for attributes attached to partial keys may have to be replicated.
   - For rows containing the information related to one or more attributes attached to partial keys, in addition to these attributes only the components that are part of the partial key need to be filled, all others can be left empty. 
-  - For rows containing information to be deleted, the deletion is assumed to take place of the lowest level of detail provided in the message. For that purpose, to be deleted measure or attribute values are non-empty, e.g. marked with the dash character "-". Delete operations allow wildcarding dimensions by leaving the corresponding dimension field empty.
+  - For rows containing information to be deleted, the deletion is assumed to take place at the lowest level of detail provided in the message. For that purpose, to be deleted measure or attribute values are non-empty, e.g. marked with the dash character "-". Delete operations allow wildcarding dimensions by leaving the corresponding dimension field empty.
 - The other custom columns contain any potentially localised custom content.
 
 ## Localisation 
@@ -105,7 +104,7 @@ Note: For multi-language values, all language versions are provided independentl
 - This sub-field separation character has to be defined as first character in the squared bracket term of the header field of the first column, e.g. `STRUCTURE[;]`.
 - Such components are indicated by having its ID followed by the list of possible language codes separated by the sub-field separator and encapsulated squared brackets "[]", e.g. `ATTR2[en;fr;de]`.
 - Each individual language value is to prefixed with its 2-letter ISO language code and a colon character ":", e.g. `en:Value1`.
-- Each multi-lingual value set is to be encapsulated in double quotes, e.g. `"en:Value1;fr:Valeur1";"en:Value2;de:Wert2"`. However, mote that fields with quotes must themselves be encapsulated in double quotes and that the inner quotes need to be doubled, thus the fully complete example is `"""en:Value1;fr:Valeur1"";""en:Value2;de:Wert2"""`.
+- Each multi-lingual value set is to be encapsulated in double quotes, e.g. `"en:Value1;fr:Valeur1";"en:Value2;de:Wert2"`. However, note that fields containing quotes must themselves be encapsulated in double quotes and that the inner quotes need to be doubled, thus the complete example is `"""en:Value1;fr:Valeur1"";""en:Value2;de:Wert2"""`.
 
 ## Non-coded XHTML-valued components
 
@@ -150,56 +149,56 @@ Note: The following default parameter settings are automatically applied:
 	dataflow,ESTAT:NA_MAIN(1.6.0),I,12.4,12.5,"Normal, special and other values",X;Y,B,A,2014-01
 	dataflow,ESTAT:NA_MAIN(1.6.0),I,10.8,10.9,"Normal, special and other values",X;Z,B,A,2014-02
 
-#### 3) Components in any order and missing component, HTTP Accept header: `application/vnd.sdmx.data+csv; version=1.0.0; key=series`, condensed flavour
+#### 3) Components in any order and missing component, HTTP Accept header: `application/vnd.sdmx.data+csv; version=1.0.0; key=series`
 
-	STRUCTURE[;]=dataflow,STRUCTURE_ID=ESTAT:NA_MAIN(1.6.0),ACTION=I,SERIES_KEY,OBS_VALUE1,OBS_VALUE2,ATTR_3,ATTR_1,DIM_2,DIM_1,DIM_3
-	,,,A.B,12.4,12.5,"Normal, special and other values",N,B,A,2014-01
-	,,,A.B,10.8,10.9,"Normal, special and other values",Y,B,A,2014-02
+	STRUCTURE[;],STRUCTURE_ID,ACTION,SERIES_KEY,OBS_VALUE1,OBS_VALUE2,ATTR_3,ATTR_1,DIM_2,DIM_1,DIM_3
+	dataflow,ESTAT:NA_MAIN(1.6.0),I,A.B,12.4,12.5,"Normal, special and other values",N,B,A,2014-01
+	dataflow,ESTAT:NA_MAIN(1.6.0),I,A.B,10.8,10.9,"Normal, special and other values",Y,B,A,2014-02
 
-#### 4) Localisation: HTTP Accept header: `application/vnd.sdmx.data+csv; version=1.0.0; labels=both; key=both`, HTTP Accept-Language header: `fr-FR, en;q=0.7`, condensed flavour
+#### 4) Localisation: HTTP Accept header: `application/vnd.sdmx.data+csv; version=1.0.0; labels=both; key=both`, HTTP Accept-Language header: `fr-FR, en;q=0.7`
 
-	STRUCTURE[|]=dataflow;STRUCTURE_ID=ESTAT:NA_MAIN(1.6.0): Principaux agrégats des comptes nationaux;ACTION=I;SERIES_KEY;OBS_KEY;DIM_1: Dimension 1;DIM_2: Dimension 2;DIM_3: Dimension 3;OBS_VALUE: Observation value;ATTR_2: Attribut 2;ATTR_3: Attribut 3;ATTR_1: Attribut 1
-	;;;A.B;A.B.2014-01;A: Value A;B: Value B;2014-01: 2014-01;12,4;Y: Oui;Normal, special and other values;N: Non
-	;;;A.B;A.B.2014-02;A: Value A;B: Value B;2014-02: 2014-02;10,8;Y: Oui;Normal, special and other values;Y: Oui
+	STRUCTURE[|];STRUCTURE_ID;ACTION;SERIES_KEY;OBS_KEY;DIM_1: Dimension 1;DIM_2: Dimension 2;DIM_3: Dimension 3;OBS_VALUE: Observation value;ATTR_2: Attribut 2;ATTR_3: Attribut 3;ATTR_1: Attribut 1
+	dataflow;ESTAT:NA_MAIN(1.6.0): Principaux agrégats des comptes nationaux;I;A.B;A.B.2014-01;A: Value A;B: Value B;2014-01: 2014-01;12,4;Y: Oui;Normal, special and other values;N: Non
+	dataflow;ESTAT:NA_MAIN(1.6.0): Principaux agrégats des comptes nationaux;I;A.B;A.B.2014-02;A: Value A;B: Value B;2014-02: 2014-02;10,8;Y: Oui;Normal, special and other values;Y: Oui
 
 Note that in this example the client prefers French (fr) language with the France (FR) locale, but will also accept any type of English. Therefore, in the message the French language with the France locale is applied, transforming also the field separator from comma (,) to semicolon (;), and the decimal separator from dot (.) to comma (,).
 
-#### 5) HTTP Accept header: `application/vnd.sdmx.data+csv; version=1.0.0; labels=both; timeFormat=normalized`, condensed flavour
+#### 5) HTTP Accept header: `application/vnd.sdmx.data+csv; version=1.0.0; labels=both; timeFormat=normalized`
 
-	STRUCTURE[;]=dataflow,STRUCTURE_ID=ESTAT:NA_MAIN(1.6.0): National Accounts Main Aggregates,ACTION=I,DIM_1: Dimension 1,DIM_2: Dimension 2,DIM_3: Dimension 3,OBS_VALUE: Observation value,ATTR_2: Attribute 2,ATTR_3: Attribute 3,ATTR_1: Attribute 1
-	,,,A: Value A,B: Value B,2014-01-01,12.4,Y: Yes,"Normal, special and other values",N: No
-	,,,A: Value A,B: Value B,2014-02-01,10.8,Y: Yes,"Normal, special and other values",Y: Yes
+	STRUCTURE[;],STRUCTURE_ID,ACTION,DIM_1: Dimension 1,DIM_2: Dimension 2,DIM_3: Dimension 3,OBS_VALUE: Observation value,ATTR_2: Attribute 2,ATTR_3: Attribute 3,ATTR_1: Attribute 1
+	dataflow,ESTAT:NA_MAIN(1.6.0): National Accounts Main Aggregates,I,A: Value A,B: Value B,2014-01-01,12.4,Y: Yes,"Normal, special and other values",N: No
+	dataflow,ESTAT:NA_MAIN(1.6.0): National Accounts Main Aggregates,I,A: Value A,B: Value B,2014-02-01,10.8,Y: Yes,"Normal, special and other values",Y: Yes
 
-#### 6) HTTP Accept header: `application/vnd.sdmx.data+csv; version=1.0.0; labels=name`, condensed flavour
+#### 6) HTTP Accept header: `application/vnd.sdmx.data+csv; version=1.0.0; labels=name`
 
-	STRUCTURE=dataflow,STRUCTURE_ID=ESTAT:NA_MAIN(1.6.0),STRUCTURE_NAME=National Accounts Main Aggregates,ACTION=I,DIM_1=A,Dimension 1=Value A,DIM_2=B,Dimension 2=Value B,DIM_3,Dimension 3,OBS_VALUE,Observation value=,ATTR_1=Y,Attribute 1=Yes,"ATTR_2=""Normal, special and other values""",Attribute 2=,ATTR_3,Attribute 3
-	,,,,,,,,2014-01,2014-01,12.4,,,,,,N,No
-	,,,,,,,,2014-02,2014-02,10.8,,,,,,Y,Yes
+	STRUCTURE,STRUCTURE_ID,STRUCTURE_NAME,ACTION,DIM_1,Dimension 1,DIM_2,Dimension 2,DIM_3,Dimension 3,OBS_VALUE,Observation value,ATTR_1,Attribute 1,ATTR_2,Attribute 2,ATTR_3,Attribute 3
+	dataflow,ESTAT:NA_MAIN(1.6.0),National Accounts Main Aggregates,I,A,Value A,B,Value B,2014-01,2014-01,12.4,,Y,Yes,"Normal, special and other values",,N,No
+	dataflow,ESTAT:NA_MAIN(1.6.0),National Accounts Main Aggregates,I,A,Value A,B,Value B,2014-02,2014-02,10.8,,Y,Yes,"Normal, special and other values",,Y,Yes
 
-#### 7) Multi-valued components, condensed flavour
+#### 7) Multi-valued components
 
-	STRUCTURE[;]=dataflow,STRUCTURE_ID=ESTAT:NA_MAIN(1.6.0),ACTION=I,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_1[],ATTR_2[],ATTR_3[]
-	,,,A,B,2014-01,12.4,Value X;Value Y,"M, N & O;P & Q",A;B;C
-	,,,A,B,2014-02,10.8,Value X;Value Y,"M, N & O;P & Q",A;C
+	STRUCTURE[;],STRUCTURE_ID,ACTION,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_1[],ATTR_2[],ATTR_3[]
+	dataflow,ESTAT:NA_MAIN(1.6.0),I,A,B,2014-01,12.4,Value X;Value Y,"M, N & O;P & Q",A;B;C
+	dataflow,ESTAT:NA_MAIN(1.6.0),I,A,B,2014-02,10.8,Value X;Value Y,"M, N & O;P & Q",A;C
 
-#### 8) Non-coded multi-lingual components, varying dataflows, condensed flavour
+#### 8) Non-coded multi-lingual components, varying dataflows
 
-	STRUCTURE[;]=dataflow,STRUCTURE_ID,ACTION,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_1[en;fr]
-	,ESTAT:NA_MAIN(1.6.0),I,A,B,2014-01,12.4,en:Any Value;fr:N'importe quelle Valeur
-	,ESTAT:NA_MAIN(1.7.0),I,A,B,2014-02,10.8,"en:Value ""X"";fr:Valeur ""X"""
+	STRUCTURE[;],STRUCTURE_ID,ACTION,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_1[en;fr]
+	dataflow,ESTAT:NA_MAIN(1.6.0),I,A,B,2014-01,12.4,en:Any Value;fr:N'importe quelle Valeur
+	dataflow,ESTAT:NA_MAIN(1.7.0),I,A,B,2014-02,10.8,"en:Value ""X"";fr:Valeur ""X"""
 
-#### 9) Non-coded multi-lingual components, varying structures, condensed flavour
+#### 9) Non-coded multi-lingual components, varying structures
 
-	STRUCTURE[;],STRUCTURE_ID,ACTION=I,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_1[en;fr]
-	dataflow,ESTAT:DF_NA_MAIN(1.6.0),,A,B,2014-01,12.4,en:Any Value;fr:N'importe quelle Valeur
-	datastructure,ESTAT:DSD_NA_MAIN(1.7.0),,A,B,2014-02,10.8,"en:Value ""X"";fr:Valeur ""X"""
-	dataprovision,ESTAT:DPA_NA_MAIN(1.8.0),,A,B,2014-03,11.2,"en:Value ""Y"";fr:Valeur ""Y"""
+	STRUCTURE[;],STRUCTURE_ID,ACTION,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_1[en;fr]
+	dataflow,ESTAT:DF_NA_MAIN(1.6.0),I,A,B,2014-01,12.4,en:Any Value;fr:N'importe quelle Valeur
+	datastructure,ESTAT:DSD_NA_MAIN(1.7.0),I,A,B,2014-02,10.8,"en:Value ""X"";fr:Valeur ""X"""
+	dataprovision,ESTAT:DPA_NA_MAIN(1.8.0),I,A,B,2014-03,11.2,"en:Value ""Y"";fr:Valeur ""Y"""
 
-#### 10) Varying actions, condensed flavour
+#### 10) Varying actions
 
-	STRUCTURE=dataflow,STRUCTURE_ID=ESTAT:NA_MAIN(1.6.0),ACTION,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_1
-	,,A,A,B,2014-01,12.4,X
-	,,R,A,B,2014-02,10.8,Y
+	STRUCTURE,STRUCTURE_ID,ACTION,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_1
+	dataflow,ESTAT:NA_MAIN(1.6.0),A,A,B,2014-01,12.4,X
+	dataflow,ESTAT:NA_MAIN(1.6.0),R,A,B,2014-02,10.8,Y
 
 #### 11) Data for a non-versioned(1) data structure definition
 
@@ -207,11 +206,11 @@ Note that in this example the client prefers French (fr) language with the Franc
 	datastructure,AGENCY:DF_ID,I,A,B,2014-01,12.4,N
 	datastructure,AGENCY:DF_ID,I,A,B,2014-02,10.8,Y
 
-#### 12) Attributes attached to partial keys for a data provision agreement, condensed flavour
+#### 12) Attributes attached to partial keys for a data provision agreement
 
-	STRUCTURE=dataprovision,STRUCTURE_ID=AGENCY:DPA_ID(1.0.0),ACTION,DIM_2,DIM_3,ATTR_1
-	,,I,B,2014-01,N
-	,,I,B,2014-02,Y
+	STRUCTURE,STRUCTURE_ID,ACTION,DIM_2,DIM_3,ATTR_1
+	dataprovision,AGENCY:DPA_ID(1.0.0),I,B,2014-01,N
+	dataprovision,AGENCY:DPA_ID(1.0.0),I,B,2014-02,Y
 
 #### 13) Mixing rows for attributes attached to partial keys with rows for observations 
 
