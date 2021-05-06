@@ -30,7 +30,7 @@ The SDMX-CSV format is flexible enough in its representation to support the need
 - The next one or two columns are always used for the structure's identification.
 - The next column is always used for the action to be performed.
 - The next up to two columns are used for the series and/or observation key.
-- Each Data Structure Definition (DSD) component (dimensions, attributes (including those defined through a referenced Metadata Structure Definition (MSD)), measures) included in the message is represented in one or two columns. SDMX web services should return the columns in the order of components as defined in the Data Structure Definition. However, any order of these columns is valid for data uploads to SDMX-consuming systems.
+- Each Data Structure Definition (DSD) component (dimensions, measures, attributes (including those defined through a referenced Metadata Structure Definition)) included in the message is represented in one or two columns. SDMX web services should return the columns in the order of components as defined in (each of) the underlying Data Structure Definition(s). However, any order of these columns is valid for data uploads to SDMX-consuming systems.
 - Only all those dimension columns have to be present, that are required to uniquely identify the concerned attributes and/or measures.
 - Attributes can but do not need to be included even if they have a mandatory status.
 - Measures can but do not have to be included.
