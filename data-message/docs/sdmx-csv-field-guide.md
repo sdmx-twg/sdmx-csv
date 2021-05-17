@@ -30,7 +30,7 @@ The SDMX-CSV format is flexible enough in its representation to support the need
 - The next one or two columns are always used for the structure's identification.
 - The next column is always used for the action to be performed.
 - The next up to two columns are used for the series and/or observation key.
-- Each Data Structure Definition (DSD) component (dimensions, measures, attributes (including those defined through a referenced Metadata Structure Definition)) included in the message is represented in one or two columns. SDMX web services should return the columns in the order of components as defined in (each of) the underlying Data Structure Definition(s). However, any order of these columns is valid for data uploads to SDMX-consuming systems.
+- Each Data Structure Definition (DSD) component (dimensions, measures, attributes including those defined through a referenced Metadata Structure Definition) included in the message is represented in one or two columns. SDMX web services should return the columns in the order of components as defined in (each of) the underlying Data Structure Definition(s), grouped by type of component, thus in case of data defined by different data structures: first the dimensions of the first data structure, then the remaining dimensions of the second data structure and so forth, then the measures of the first data structure, then the remaining measures of the second data structure and so forth, then the attributes of the first data structure, then the remaining attributes of the second data structure and so forth. However, any order of these columns is valid for data uploads to SDMX-consuming systems.
 - Only all those dimension columns have to be present, that are required to uniquely identify the concerned attributes and/or measures.
 - Attributes can but do not need to be included even if they have a mandatory status.
 - Measures can but do not have to be included.
@@ -70,7 +70,7 @@ The SDMX-CSV format is flexible enough in its representation to support the need
   - If option `labels=both` (see *[here](#optional-parameters)*): The ID(s) and the localised name separated by the term ": " (if coded) or the value(s) (if non-coded) for the component values reported in that column for the corresponding observation, e.g. `A: A value name`.
   - If option `labels=name` (see *[here](#optional-parameters)*): An additional column is added right after the component identification column containing the localised name, e.g. `A value name`, of the component value reported in the previous column. It is empty if the value has no localised name.
   - For rows containing the information related to one specific observation, the related values for attributes attached to partial keys may have to be replicated.
-  - For rows containing the information related to one or more attributes attached to partial keys, in addition to these attributes only the components that are part of the partial key need to be filled, all others can be left empty. 
+  - For rows containing the information related to one or more attributes attached to partial keys, in addition to these attributes only the components that are part of the partial key need to be filled, all others can be left empty. Also the columns not related to the row's data (when data from different data structure are present) are to be left empty.
   - For rows containing information to be deleted, the deletion is assumed to take place at the lowest level of detail provided in the message. For that purpose, to be deleted measure or attribute values are non-empty, e.g. marked with the dash character "-". Delete operations allow wildcarding dimensions by leaving the corresponding dimension field empty.
 - The other custom columns contain any potentially localised custom content.
 
@@ -181,18 +181,25 @@ Note that in this example the client prefers French (fr) language with the Franc
 	dataflow,ESTAT:NA_MAIN(1.6.0),I,A,B,2014-01,12.4,Value X;Value Y,"M, N & O;P & Q",A;B;C
 	dataflow,ESTAT:NA_MAIN(1.6.0),I,A,B,2014-02,10.8,Value X;Value Y,"M, N & O;P & Q",A;C
 
-#### 8) Non-coded multi-lingual components, varying dataflows
+#### 8) Non-coded multi-lingual components, varying dataflows based on the same underlying data structure
 
 	STRUCTURE[;],STRUCTURE_ID,ACTION,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_1[en;fr]
 	dataflow,ESTAT:NA_MAIN(1.6.0),I,A,B,2014-01,12.4,en:Any Value;fr:N'importe quelle Valeur
 	dataflow,ESTAT:NA_MAIN(1.7.0),I,A,B,2014-02,10.8,"en:Value ""X"";fr:Valeur ""X"""
 
-#### 9) Non-coded multi-lingual components, varying structures
+#### 9-A) Varying structural artefacts based on same underlying data structure
 
 	STRUCTURE[;],STRUCTURE_ID,ACTION,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_1[en;fr]
 	dataflow,ESTAT:DF_NA_MAIN(1.6.0),I,A,B,2014-01,12.4,en:Any Value;fr:N'importe quelle Valeur
 	datastructure,ESTAT:DSD_NA_MAIN(1.7.0),I,A,B,2014-02,10.8,"en:Value ""X"";fr:Valeur ""X"""
 	dataprovision,ESTAT:DPA_NA_MAIN(1.8.0),I,A,B,2014-03,11.2,"en:Value ""Y"";fr:Valeur ""Y"""
+
+#### 9-B) Varying structural artefacts based on different underlying data structures
+
+	STRUCTURE[;],STRUCTURE_ID,ACTION,DIM_A1B1,DIM_A2,DIM_A3C2,DIM_B2,DIM_C1,DIM_C3,MEAS_A1B1C1,MEAS_C2,ATTR_A1,ATTR_B1
+	dataflow,ESTAT:DF_A(1.6.0),I,DIMVAL_A1B1,DIMVAL_A2,DIMVAL_A3C2,,,,"MEASVAL_A1B1C1",,"ATTRVAL_A1",
+	datastructure,ESTAT:DSD_B(1.7.0),I,DIMVAL_A1B1,,,DIMVAL_B2,,,"MEASVAL_A1B1C1",,,"ATTRVAL_B1"
+	dataprovision,ESTAT:DPA_C(1.8.0),I,,,DIMVAL_A3C2,,DIMVAL_C1,DIMVAL_C3,"MEAS_A1B1C1","MEAS_C2",,
 
 #### 10) Varying actions
 
