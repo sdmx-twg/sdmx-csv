@@ -34,7 +34,7 @@ The SDMX-CSV format is flexible enough in its representation to support the need
 - Only all those dimension columns have to be present, that are required to uniquely identify the concerned attributes and/or measures.
 - Attributes can but do not need to be included even if they have a mandatory status.
 - Measures can but do not have to be included.
-- When an SDMX RESTful web service implements streaming, then it might not know, while generating the csv header row, which measures and attributes actually have values. Therefore, it can happen that all values presented for an attribute or measure are left empty.
+- When an SDMX RESTful web service implements streaming, then it might not know, while generating the csv header row, which measures and attributes actually have values. Therefore, it can happen that all values presented in an attribute or measure column are left empty.
 - Implementers have the possibility to add any other custom columns as required, e.g. updated, prepared, etc.
 
 ## Column headers (first row)
@@ -70,7 +70,7 @@ The SDMX-CSV format is flexible enough in its representation to support the need
   - If option `labels=both` (see *[here](#optional-parameters)*): The ID(s) and the localised name separated by the term ": " (if coded) or the value(s) (if non-coded) for the component values reported in that column for the corresponding observation, e.g. `A: A value name`.
   - If option `labels=name` (see *[here](#optional-parameters)*): An additional column is added right after the component identification column containing the localised name, e.g. `A value name`, of the component value reported in the previous column. It is empty if the value has no localised name.
   - For rows containing the information related to one specific observation, the related values for attributes attached to partial keys may have to be replicated.
-  - For rows containing the information related to one or more attributes attached to partial keys, in addition to these attributes only the components that are part of the partial key need to be filled, all others can be left empty. Also the columns not related to the row's data (when data from different data structure are present) are to be left empty.
+  - For rows containing the information related to one or more attributes attached to partial keys, in addition to these attributes only the components that are part of the partial key need to be filled, all other components can be left empty. Also the columns not related to the attribute's data structure (when data from different data structures are present) are to be left empty.
   - For rows containing information to be deleted, the deletion is assumed to take place at the lowest level of detail provided in the message. For that purpose, to be deleted measure or attribute values are non-empty, e.g. marked with the dash character "-". Delete operations allow wildcarding dimensions by leaving the corresponding dimension field empty.
 - The other custom columns contain any potentially localised custom content.
 
@@ -83,12 +83,13 @@ The SDMX-CSV format is flexible enough in its representation to support the need
 **It is recommended to indicate all languages used anywhere in the message for localised name elements through http Content-Language response header (languages of the intended audience).**  
 Note: For multi-language values, all language versions are provided independently from the preferred language (see below).   
 
-## Multi-valued components
+## Multi-valued components and nested metadata attributes
 
 - Some components (measures or attributes) allow for multiple values. Those multiple values are separated by a special sub-field separation character, e.g. `;`.
 - This sub-field separation character has to be defined as first character in the squared bracket term of the header field of the first column, e.g. `STRUCTURE[;]`.
 - Such components are indicated by having their IDs followed by empty squared brackets "[]", e.g. `ATTR4[]`.
 - For coded multi-valued components, if option `labels=both` (see *[here](#optional-parameters)*) then each individual value is to be prefixed with its ID and the term ": ", e.g. `A: Value A;B: Value B`.
+- Each metadata attribute is also to be presented in its own column(s), even if the metadata attributes are nested. In that case, the attribute IDs in the column headers are pre-fixed with the IDs of the related parent attribute(s) separated by a dot `.`, e.g. `CONTACT[].NAME[]`. All the values corresponding to one attribute are presented like a multi-valued component by respecting their position in the nested attribute tree, e.g. `name for contact 1;name for contact 2`. Parent branches in that attribute tree without a value for a specific attribute need to be indicated by leaving the corresponding multi-value sub-field empty, e.g. `name for contact 1;;name for contact 3`. Nested parent branches are indicated by using nested double quotes. Note that fields containing double quotes must themselves be encapsulated in double quotes and that nested inner double quotes need to be doubled recoursively, e.g. `"""name 1 for contact 1;name 2 for contact 1"";""name 1 for contact 2;name 2 for contact 2"""`.
 
 ## Non-coded multi-lingual components
 
@@ -104,7 +105,7 @@ Note: For multi-language values, all language versions are provided independentl
 - This sub-field separation character has to be defined as first character in the squared bracket term of the header field of the first column, e.g. `STRUCTURE[;]`.
 - Such components are indicated by having its ID followed by the list of possible language codes separated by the sub-field separator and encapsulated squared brackets "[]", e.g. `ATTR2[en;fr;de]`.
 - Each individual language value is to prefixed with its 2-letter ISO language code and a colon character ":", e.g. `en:Value1`.
-- Each multi-lingual value set is to be encapsulated in double quotes, e.g. `"en:Value1;fr:Valeur1";"en:Value2;de:Wert2"`. However, note that fields containing quotes must themselves be encapsulated in double quotes and that the inner quotes need to be doubled, thus the complete example is `"""en:Value1;fr:Valeur1"";""en:Value2;de:Wert2"""`.
+- Each multi-lingual value set is to be encapsulated in double quotes, e.g. `"en:Value1;fr:Valeur1";"en:Value2;de:Wert2"`. However, note that fields containing double quotes must themselves be encapsulated in double quotes and that the inner double quotes need to be doubled, thus the complete example is `"""en:Value1;fr:Valeur1"";""en:Value2;de:Wert2"""`.
 
 ## Non-coded XHTML-valued components
 
@@ -138,9 +139,10 @@ Note: All examples assume the minimal HTTP Accept header: `application/vnd.sdmx.
 	dataflow,ESTAT:NA_MAIN(1.6.0),I,A,B,2014-01,12.4,Y,"Normal, special and other values",N,2021-01-22T13:15:41Z
 	dataflow,ESTAT:NA_MAIN(1.6.0),I,A,B,2014-02,10.8,Y,"Normal, special and other values",Y,2021-01-22T13:15:41Z
 
-Note: The following default parameter settings are automatically applied:
-- labels=id
-- timeFormat=original
+Notes:  
+- The following default parameter settings are automatically applied:
+  - labels=id
+  - timeFormat=original
 - *UPDATED* is a custom column
 
 #### 2) Components in any order, missing component(s), component with multiple values
@@ -225,20 +227,26 @@ Note that in this example the client prefers French (fr) language with the Franc
 	dataflow,AGENCY:DF_ID(1.0.0),I,A,B,2014-01,12.4,N,
 	dataflow,AGENCY:DF_ID(1.0.0),I,,B,,,,Y
 
-#### 14) Non-coded XHTML-formatted values with line-breaks 
+#### 14) Nested metadata attributes attached to partial keys
+
+	STRUCTURE,STRUCTURE_ID,ACTION,DIM_2,COLLECTION.METHOD[en;fr],CONTACT[],CONTACT[].NAME[]
+	dataflow,AGENCY:DF_ID(1.0.0),I,A,en:AAA;fr:BBB,Contact 1;Contact 2,"""Contact 1 Name 1;Contact 1 Name 2"";""Contact 1 Name 1;Contact 2 Name 2"""
+	dataflow,AGENCY:DF_ID(1.0.0),I,B,en:CCC;fr:DDD,Contact 1;Contact 2;Contact 3,"""Contact 1 Name 1;Contact 1 Name 2"";;""Contact 3 Name 1;Contact 3 Name 2"""
+
+#### 15) Non-coded XHTML-formatted values with line-breaks 
 
 	STRUCTURE,STRUCTURE_ID,ACTION,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_1
 	dataflow,ESTAT:NA_MAIN(1.6.0),I,A,B,2014-01,12.4,"<p>This is some ""xhtml"" with a line
 	break</p>"
 	dataflow,ESTAT:NA_MAIN(1.6.0),I,A,B,2014-02,10.8,"<p>This is some other ""xhtml""</p>"
 
-#### 15) Deleting specific measure and attribute values: all non-empty values (e.g. marked with "-") are deleted
+#### 16) Deleting specific measure and attribute values: all non-empty values (e.g. marked with "-") are deleted
 
 	STRUCTURE,STRUCTURE_ID,ACTION,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_2,ATTR_3,ATTR_1
 	dataflow,ESTAT:NA_MAIN(1.6.0),D,A,B,2014-01,-,,,
 	dataflow,ESTAT:NA_MAIN(1.6.0),D,A,B,2014-02,,,-,
 
-#### 16) Deleting specific measure and attribute values with wildcarded dimensions: all non-empty values (e.g. marked with "-") are deleted for all dimension combinations where:
+#### 17) Deleting specific measure and attribute values with wildcarded dimensions: all non-empty values (e.g. marked with "-") are deleted for all dimension combinations where:
    - row 2: DIM2=A
    - row 3: DIM2=B
 
@@ -246,7 +254,7 @@ Note that in this example the client prefers French (fr) language with the Franc
 	dataflow,ESTAT:NA_MAIN(1.6.0),D,,A,,-,,,
 	dataflow,ESTAT:NA_MAIN(1.6.0),D,,B,,,,-,
 
-#### 17) Deleting whole observations with wildcarded dimensions: all observations are deleted for all dimension combinations where:
+#### 18) Deleting whole observations with wildcarded dimensions: all observations are deleted for all dimension combinations where:
    - row 2: DIM2=A
    - row 3: DIM2=B and DIM3=C
 
@@ -254,7 +262,7 @@ Note that in this example the client prefers French (fr) language with the Franc
 	dataflow,ESTAT:NA_MAIN(1.6.0),D,A,,
 	dataflow,ESTAT:NA_MAIN(1.6.0),D,B,C,
 
-#### 18) Deleting all data for a data structure definition:
+#### 19) Deleting all data for a data structure definition:
 
 	STRUCTURE,STRUCTURE_ID,ACTION
 	datastructure,ESTAT:DSD_NA_MAIN(1.6.0),D
