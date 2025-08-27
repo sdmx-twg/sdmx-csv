@@ -320,8 +320,8 @@ Note that in this example the client prefers French (fr) language with the Franc
    - row 3: DIM2=B and DIM3=C
 
 	STRUCTURE,STRUCTURE_ID,ACTION,DIM_2,DIM_3
-	dataflow,ESTAT:NA_MAIN(1.6.0),D,A,,
-	dataflow,ESTAT:NA_MAIN(1.6.0),D,B,C,
+	dataflow,ESTAT:NA_MAIN(1.6.0),D,A,
+	dataflow,ESTAT:NA_MAIN(1.6.0),D,B,C
 
 #### 19) Deleting all data for a data structure definition:
 
