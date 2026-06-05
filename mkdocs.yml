@@ -1,0 +1,6 @@
+site_name: csv
+
+nav:
+  - index.md
+  - Data Message Field Guide: data_message_field_guide.md
+  - Metadata Message Field Guide: metadata_message_field_guide.md
