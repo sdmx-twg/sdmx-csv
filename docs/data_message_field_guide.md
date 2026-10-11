@@ -104,7 +104,7 @@ needs of different target audiences:
   column is added right after the artefact identification column containing the
   term `STRUCTURE_NAME`.
 - The header field of the next column should contain the term `ACTION`. For
-  convenience, if this column is not present, a default action ("Information")
+  convenience, if this column is not present, a default action ("Merge")
   is assumed for the whole message.
 - The next up to two columns contain, if option `key=series|obs|both` (see
   _[optional parameters](#optional-parameters)_), in this order the terms `SERIES_KEY`
