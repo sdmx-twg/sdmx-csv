@@ -2,394 +2,539 @@
 
 ## Introduction
 
-SDMX-CSV Data Message is an SDMX data exchange format based on the
-[RFC 4180](https://tools.ietf.org/html/rfc4180). CSV is a widely used
-standardised and simple format to exchange data supported by many tools.
+SDMX-CSV Metadata Message is an SDMX reference metadata exchange format based
+on [RFC 4180](https://tools.ietf.org/html/rfc4180). CSV is a widely used,
+standardised and simple format to exchange data, supported by many tools.
 
-SDMX-CSV integrates with other specifications, i.e.:
+SDMX-CSV integrates with other specifications:
 
-- The SDMX API RESTful specification (e.g. content negotiation with mime-type to
-  get SDMX-CSV representations, specific formats for responses, language
-  selection through HTTP content negotiation)
-- The [RFC 4180](https://tools.ietf.org/html/rfc4180) specification
+- The SDMX RESTful API specification (e.g. content negotiation with a media
+  type to get SDMX-CSV representations, specific formats for responses,
+  language selection through HTTP content negotiation).
+- The [RFC 4180](https://tools.ietf.org/html/rfc4180) specification.
 
-### RFC 4180: A common format for CSV files
+### Conventions
 
-In order to benefit from best practices, SDMX-CSV is based on the rules defined
-in the [RFC 4180](https://tools.ietf.org/html/rfc4180), which defines a common
-format and MIME Type for CSV files. It is advised to read the (very short) RFC
-for a full list of requirements but, in a nutshell, the RFC defines rules such
-as:
+The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD",
+"SHOULD NOT", "RECOMMENDED", "MAY" and "OPTIONAL" in this document are to be
+interpreted as described in [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119)
+and [RFC 8174](https://www.rfc-editor.org/rfc/rfc8174) when, and only when,
+they appear in all capitals.
 
-- How the CSV file should be structured (the RFC specifies that all records must
-  have an identical structure (determined column number), like when using an
-  SDMX "flat" representation for data);
-- When double-quotes should be used and how to escape them when needed;
-- How spaces should be handled: Spaces are considered part of a field and should
-  not be ignored;
-- Which mime type should be used;
-- What is the default character set, etc.
+This guide distinguishes two roles:
 
-## Design principles for SDMX-CSV 2.1 Metadata Messages (aligned with SDMX 3.1)
+- **Sender**: a system that writes an SDMX-CSV message, e.g. an SDMX web
+  service returning a response, or a metadata provider preparing an upload.
+- **Receiver**: a system that reads an SDMX-CSV message, e.g. a client tool
+  consuming a response, or an SDMX storage system processing an upload.
 
-- In order to ensure the identifiability of the metadata contained in the
-  message, the header row containing the column headers is mandatory and its
-  content is well-defined.
-- An SDMX-CSV referential metadata message contains metadata attribute values
-  for one or more metadatasets reported for one or more metadataflows or
-  metadata provision agreements.
-- After the mandatory header row, each row contains the information related to
-  one specific metadataset attached to one or more identifiable artefacts
-  (targets).
-- In [RFC 4180](https://tools.ietf.org/html/rfc4180), csv stands for
-  "comma-separated values". However, while SDMX-CSV uses indeed the "comma"
-  (%x2C) as the default field separator, it adopts the wider interpretation of
-  csv as "character-separated values". It is recommended for implementers to
-  provide SDMX-CSV messages according to the locale of the user (e.g. as
-  indicated in the http Accept-Language header). It means that e.g. the
-  semi-colon ‘;’ (as used typically in specific regions or countries) is
-  acceptable as separator. See also the examples below. Note that the separator
-  used in a message can be determined by retrieving the character that follows
-  the header field of the first column which extended by a squared bracket term
-  (see below).
+### RFC 4180
 
-### Columns
+SDMX-CSV follows the rules of [RFC 4180](https://tools.ietf.org/html/rfc4180),
+which defines a common format and media type for CSV files. Implementers should
+read the (very short) RFC; in a nutshell it defines:
 
-- The first column is always used for the underlying type of structure by which
-  the metadataset is defined: metadataflow or metadata provision agreement.
-- The next one or two columns are always used for the related structure
-  identification.
-- The next one or two columns are used for the metadataset identification.
-- The next column, previously used for the action to be performed for the
-    metadataset, is deprecated. Instead use the appropriate HTTP method when
-    submitting the message to an SDMX Rest API as documented
-    [here](https://github.com/sdmx-twg/sdmx-rest/blob/complement-maintenance-doc/doc/maintenance.md#maintaining-reference-metadata).
-- The next column is used for indicating if the metadataset includes only
-    partial available languages. If false (the default), then the value is `0`,
-    otherwise `1`. E.g., an SDMX Rest GET query with an HTTP header
-    `Accept-Language` may result in a metadataset containing only partial languages.
-    If such a metadataset is again submitted to an SDMX Rest web service, then
-    only the included languages are added or updated in the target SDMX system
-    but other languages are not changed;
-- The next column is used for the structure types of all targets of the
-  metadataset.
-- The next one or two columns are used for the identification of all targets of
-  the metadataset.
-- Each metadata attribute of the included metadataset(s) is represented in one
-  or two columns. SDMX web services should return the columns in the metadata
-  attribute order as defined in (each of) the underlying Metadata Structure
-  Definition(s), thus in case of data defined by different metadata structures:
-  first the metadata attributes of the first metadata structure, then the
-  remaining metadata attributes of the second metadata structure and so forth.
-  However, any order of these columns is valid for metadata uploads to
-  SDMX-consuming systems.
-- Implementers have the possibility to add any other custom columns as required,
-  e.g. publicationPeriod, publicationYear, reportingBegin, reportingEnd,
-  prepared, etc.
-- In the context of appending or deleting metadata, certain columns may be
-  omitted, see below.
+- that all records MUST have the same number of fields as the header row;
+- when double quotes are used and how they are escaped (by doubling them);
+- that spaces are part of a field and MUST NOT be ignored;
+- the media type and the default character set.
 
-### Column headers (first row)
+SDMX-CSV extends RFC 4180 in one respect: although "CSV" stands for
+"comma-separated values" and the comma (`%x2C`) is the default field separator,
+SDMX-CSV adopts the wider interpretation "character-separated values". See
+[Separators](#separators).
 
-- The header field of the first column always starts with the term
-  `MDSTRUCTURE`.
-    - This field must be extended with a sub-field delimiter encapsulated in
-      squared brackets "[]", e.g. `MDSTRUCTURE[;]`, in case the message contains
-      metadatasets with multiple targets or with multi-instance or multi-language
-      metadata attributes.
-- The header field of the second column always contains the term
-  `MDSTRUCTURE_ID`.
-- If option `labels=name` (see *[optional parameters](#optional-parameters)*):
-  An additional column is added right after the structure identification column
-  containing the term `MDSTRUCTURE_NAME`.
-- The header field of the next column always contains the term `METADATASET_ID`.
-- If option `labels=name` (see *[optional parameters](#optional-parameters)*):
-  An additional column is added right after the metadataset identification
-  column containing the term `METADATASET_NAME`.
-- The header field of the next column may contain the term `ACTION`. If this
-    deprecated column is present, it is to be ignored.
-- The header field of the next column may contain the term `IS_PARTIAL_LANGUAGE`.
-- The header field of the next column contains the term `TARGET_TYPES`.
-- The header field of the next column contains the term `TARGET_IDS`.
-- If option `labels=name` (see *[optional parameters](#optional-parameters)*):
-  An additional column is added right after the target identification column
-  containing the term `TARGET_NAMES`.
-- The other columns for components contain:
-    - Default: The ID of the metadata attribute reported in that column prefixed
-      by all corresponding nested parent metadata attributes separated by a dot
-      "." in the form *METADATA_ID[.METADATA_ID]+*, e.g.
-      `ATTRIBUTE_GRANDPARENT_ID.ATTRIBUTE_PARENT_ID.ATTRIBUTE_CHILD_ID`.
-      Additional pairs of squared brackets `[]` are added at the end of the IDs of
-      those metadata attributes that have multiple instances, e.g.
-      `CONTACT[].NAME`, `CONTACT[].PHONE[]` or `CONTACT.PHONE[]`, and/or that
-      contain localised values. In the latter case the brackets encapsulate the
-      ISO 2-letter language codes that can be encountered in that column,
-      separated by the special sub-field separation character, e.g. `;`, defined
-      in the squared bracket term of the header field of the first column, e.g.
-      `MDSTRUCTURE[;]`. Example of a localised child attribute:
-      `PROCESS.STEP[en;fr]`, and for multiple instances: `PROCESS.STEP[][en;fr]`.
-    - If option `labels=both` (see *[optional parameters](#optional-parameters)*):
-      The full ID (as described above under 'Default') and the localised name of
-      the metadata attribute reported in that column separated by the term ": ",
-      e.g. `ATTRIBUTE_ID: ATTRIBUTE_NAME.
-    - If option `labels=name` (see *[optional parameters](#optional-parameters)*):
-      An additional column is added right after the metadata attribute
-      identification column containing the localised name of the metadata
-      attribute reported in the previous column.
-- Any other custom column contains a custom but unique term, e.g.
-  `publicationPeriod`.
+## Message overview
 
-### Column content (all rows after header)
+An SDMX-CSV metadata message contains the metadata attribute values of one or
+more metadatasets, reported for one or more metadataflows or metadata
+provision agreements. It consists of one mandatory header row followed by any
+number of rows, each containing **one metadataset** attached to **one or more
+identifiable artefacts** (its targets).
 
-- The first column contains: `metadataflow` or `metadataprovision`, depending on
-  type of artefact for which the metadata contained in the message are defined:
-  metadataflow or metadata provision agreement.
-- The second column contains:
-    - Default: The structure identification information in the form
-      *AGENCY:ARTEFACT_ID(VERSION)*[^1], e.g. `ESTAT:MDF(1.6.0)`.
-    - If option `labels=both` (see *[optional parameters](#optional-parameters)*):
-      The structure identification information and its localised name separated by
-      the term ": ", e.g. `ESTAT:MDF(1.6.0): Metadataflow name`.
-- If option `labels=name` (see *[optional parameters](#optional-parameters)*):
-  An additional column is added right after the structure identification column
-  with the structure's localised name, e.g. `Metadataflow name`.
-- The next column contains the metadataset identification information in the
-  form *AGENCY:ARTEFACT_ID(VERSION)*[^1], e.g. `AGENCY:MD_SET(1.0.0)`.
-    - If option `labels=both` (see *[optional parameters](#optional-parameters)*):
-      The ID and the localised name of the metadataset separated by the term ": ",
-      e.g. `ESTAT:MD_SET(1.0.0): Metadataset 1`.
-- If option `labels=name` (see *[optional parameters](#optional-parameters)*):
-  An additional column is added right after the metadataset identification
-  column with the metadataset's localised name, e.g. `Metadata set name`.
-- The next column, if present, containing one of the action types, is deprecated
-    and ignored.
-- The next column, if present, contains `1` or `0`, indicating if the metadataset
-    only contains only a subset of all available languages. `1` stands for partial
-    language subset, and `0` for the complete set of available languages (default).
-- The next column contains the types of all the targets of the metadataset
-  according to the resource names defined for Structural Metadata Queries, e.g.
-  `dataflow`. Multiple targets are separated by the special sub-field separation
-  character, e.g. `;`, defined in the squared bracket term of the header field
-  of the first column, e.g. `MDSTRUCTURE[;]`. Example for multiple target types:
-  `dataflow;dataflow`.
-- The next column contains the identification information of all the targets of
-  the metadataset in the form *AGENCY:ARTEFACT_ID(VERSION)* [^1], separated by
-  the sub-field separation character, e.g.
-  `AGENCY:DF1(1.0.0);AGENCY:DF2(1.0.0)`.
-    - If option `labels=both` (see *[optional parameters](#optional-parameters)*):
-      The column contains the ID and the localised name of the targets separated
-      by the term ": ", e.g. `AGENCY:DF(1.0.0): Dataflow name` or
-      `AGENCY:DF1(1.0.0): Dataflow 1 name;AGENCY:DF2(1.0.0): Dataflow 2 name`.
-- If option `labels=name` (see *[optional parameters](#optional-parameters)*):
-  An additional column is added right after the target identification column
-  with the target's localised name, e.g. `Dataflow name` or
-  `Dataflow 1 name;Dataflow 2 name`.
-- The other columns for metadata attributes contain:
-    - Default: The ID(s) (if coded) or value(s) (if non-coded) for the metadata
-      attribute reported in that column, e.g. `A`, `A;B` or
-      `"<p>An XHTML text</p>"`.
-    - If option `labels=both` (see *[optional parameters](#optional-parameters)*):
-      The ID(s) and their localised name(s) for the metadata attribute separated
-      by the term ": " (if coded) or the value(s) (if non-coded) for the metadata
-      attribute reported in that column, e.g. `A: A value name`,
-      `A: A value name;B: B value name` or `"<p>An XHTML text</p>"`.
-    - If option `labels=name` (see *[optional parameters](#optional-parameters)*):
-      An additional column is added right after the metadata attribute
-      identification column containing the localised name, e.g. `A value name` or
-      `A value name;B value name`, of the metadata attribute value reported in the
-      previous column. It is empty if the value has no localised name.
-    - All string/textual values (complete string between column-separating
-      characters including ID's or language codes) should always be encapsulated
-      in quotation marks, they must be if they contain commas or inner quotation
-      marks. Quotation marks in strings/textual values must always be escaped by
-      doubling the quotes.
-    - When metadata from different metadata structures are present then the
-      columns not related to the attribute's metadata structure are to be left
-      empty.
-- The other custom columns contain any potentially localised custom content.
+```csv
+MDSTRUCTURE,MDSTRUCTURE_ID,METADATASET_ID,TARGET_TYPES,TARGET_IDS,CONTACT
+metadataflow,OECD:MDF(1.0.0),OECD:MDS(1.0.0),dataflow,OECD:DF(1.0.0),Statistics Directorate
+```
 
-### Localisation
+### Column overview
 
-- HTTP content negotiation, see
-  [RFC 2616 - HTTP 1.1 Header Field Definitions](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html)
-    - Always use this mime-type in the Accept header:
-      `application/vnd.sdmx.metadata+csv; version=2.0.0`.
-    - The client can indicate preferred languages through the Accept-Language
-      header, e.g. `fr, en-gb;q=0.8, en;q=0.7`.
-- Always localise all artefact names according to the preferred language. The
-  first best language match according to the user’s preferred language choices
-  in the http Accept-Language header (or if that is not available than according
-  to the system's default language order) is to be used for each localisable
-  name element. The message does however not indicate the returned language per
-  localisable name element. In case that there is no such language match for a
-  particular localisable name element, it is optional to return the element in a
-  system-default language or alternatively to not return the name element. **It
-  is recommended to indicate all languages used anywhere in the message for
-  localised name elements through http Content-Language response header
-  (languages of the intended audience).**  
-  Note: For multi-language metadata attribute values, all language versions are
-  provided independently from the preferred language (see below).
+| Column name | Description | Position |
+| --- | --- | --- |
+| **Fixed columns** | | |
+| [`MDSTRUCTURE`](#mdstructure) | Type of structure by which the metadataset is defined: `metadataflow` or `metadataprovision`. The character directly after this term is the field separator. | 1 |
+| [`MDSTRUCTURE[;]`](#mdstructure) | `MDSTRUCTURE` extended with the sub-field separator in square brackets. REQUIRED when the message contains metadatasets with multiple targets, or multi-instance or multi-lingual metadata attributes. | 1 |
+| [`MDSTRUCTURE_ID`](#mdstructure_id) | Structure identification `AGENCY:ID(VERSION)`. | 2 |
+| [`MDSTRUCTURE_NAME`](#mdstructure_name) | Localised name of the structure. Only with `labels=name`. | 3 (optional) |
+| [`METADATASET_ID`](#metadataset_id) | Metadataset identification `AGENCY:ID(VERSION)`. | Directly after the structure identification: 3, or 4 with `labels=name` |
+| [`METADATASET_NAME`](#metadataset_name) | Localised name of the metadataset. Only with `labels=name`. | Directly after `METADATASET_ID` (optional) |
+| [`ACTION`](#action-deprecated) | Deprecated; ignored if present. | Directly after the metadataset identification (optional) |
+| [`IS_PARTIAL_LANGUAGE`](#is_partial_language) | `1` if the metadataset contains only a subset of the available languages, `0` (default) otherwise. | Directly after `ACTION` if present, otherwise after the metadataset identification (optional) |
+| [`TARGET_TYPES`](#target_types) | Structure types of all targets of the metadataset, e.g. `dataflow`. | Directly after the columns above |
+| [`TARGET_IDS`](#target_ids) | Identification of all targets of the metadataset. | Directly after `TARGET_TYPES` |
+| [`TARGET_NAMES`](#target_names) | Localised names of all targets. Only with `labels=name`. | Directly after `TARGET_IDS` (optional) |
+| **Metadata attribute columns** | | |
+| [`ATTR`](#metadata-attribute-columns) | Metadata attribute ID. | After the fixed columns |
+| [`PARENT.CHILD`](#nested-metadata-attributes) | Nested metadata attribute, prefixed with the IDs of all its parent attributes. | — |
+| [`ATTR: Name`](#metadata-attribute-columns) | ID and localised name in one header. Only with `labels=both`. | Replaces `ATTR` |
+| [`Name`](#metadata-attribute-columns) | Additional column with localised names. Only with `labels=name`. | Directly after its metadata attribute column |
+| [`ATTR[]`](#multi-instance-metadata-attributes) | Multi-instance metadata attribute. | — |
+| [`ATTR[en;fr]`](#non-coded-multi-lingual-metadata-attributes) | Non-coded multi-lingual metadata attribute. | — |
+| [`ATTR[][en;fr]`](#non-coded-multi-lingual-multi-instance-metadata-attributes) | Non-coded multi-lingual multi-instance metadata attribute. | — |
+| **Other columns** | | |
+| [`publicationPeriod`](#custom-columns) (any custom term) | Implementer-defined column. | Not specified |
+
+Header suffixes combine: e.g. `CONTACT[].PHONE[]` is a multi-instance child of
+a multi-instance parent, and `PROCESS.STEP[][en;fr]` is a nested,
+multi-instance, multi-lingual metadata attribute.
+
+## Separators
+
+### Field separator
+
+- Senders SHOULD use the comma `,` as field separator, unless the user's locale
+  (e.g. as indicated in the HTTP `Accept-Language` header) calls for another
+  one, e.g. the semicolon `;` used in some regions or countries.
+- The field separator of a message is the character directly following the
+  fixed first header term `MDSTRUCTURE`, or, when that term is extended with a
+  square-bracket term (see below), the character directly following `]`.
+  Receivers MUST determine the field separator this way.
+
+### Sub-field separator
+
+- Multiple targets, multi-instance and multi-lingual metadata attribute values
+  use a sub-field separator, e.g. `;`.
+- When a message contains such values, the sender MUST declare the sub-field
+  separator as the only character inside square brackets appended to the first
+  header term, e.g. `MDSTRUCTURE[;]` or `MDSTRUCTURE[|]`.
+- The sub-field separator MUST differ from the field separator.
+
+## Columns
+
+### Column order
+
+1. `MDSTRUCTURE`
+2. `MDSTRUCTURE_ID`
+3. `MDSTRUCTURE_NAME` (only with `labels=name`)
+4. `METADATASET_ID`
+5. `METADATASET_NAME` (only with `labels=name`)
+6. `ACTION` (deprecated, optional)
+7. `IS_PARTIAL_LANGUAGE` (optional)
+8. `TARGET_TYPES`
+9. `TARGET_IDS`
+10. `TARGET_NAMES` (only with `labels=name`)
+11. Metadata attribute columns
+12. Custom columns (any position)
+
+The fixed columns (1–10) MUST appear in this order, without gaps between those
+present.
+
+Metadata attribute columns:
+
+- SDMX web services SHOULD return metadata attribute columns in the order in
+  which the metadata attributes are defined in the underlying metadata
+  structure definition(s). When metadata from several metadata structures are
+  present: first the metadata attributes of the first metadata structure, then
+  the remaining metadata attributes of the second metadata structure, and so
+  forth.
+- Receivers processing uploads MUST accept metadata attribute columns in any
+  order.
+
+### `MDSTRUCTURE`
+
+**Header:** `MDSTRUCTURE`, or `MDSTRUCTURE[x]` where `x` is the sub-field
+separator (see [Sub-field separator](#sub-field-separator)).
+
+**Content:** the type of artefact by which the row's metadataset is defined:
+
+| Value | Artefact |
+| --- | --- |
+| `metadataflow` | Metadataflow |
+| `metadataprovision` | Metadata provision agreement |
+
+### `MDSTRUCTURE_ID`
+
+**Header:** `MDSTRUCTURE_ID`.
+
+**Content:**
+
+- Default: the structure identification in the form
+  _AGENCY:ARTEFACT_ID(VERSION)_, e.g. `ESTAT:MDF(1.6.0)`. For non-versioned
+  artefacts the version is omitted, e.g. `OECD:MDP`[^nv].
+- With `labels=both`: the structure identification and its localised name
+  separated by `": "`, e.g. `ESTAT:MDF(1.6.0): Metadataflow name`.
+
+### `MDSTRUCTURE_NAME`
+
+**Header:** `MDSTRUCTURE_NAME`.
+
+Present only with `labels=name`, directly after `MDSTRUCTURE_ID`.
+
+**Content:** the structure's localised name, e.g. `Metadataflow name`.
+
+### `METADATASET_ID`
+
+**Header:** `METADATASET_ID`.
+
+**Content:**
+
+- Default: the metadataset identification in the form
+  _AGENCY:ARTEFACT_ID(VERSION)_, e.g. `AGENCY:MD_SET(1.0.0)`. For
+  non-versioned metadatasets the version is omitted[^nv].
+- With `labels=both`: the metadataset identification and its localised name
+  separated by `": "`, e.g. `ESTAT:MD_SET(1.0.0): Metadataset 1`.
+
+### `METADATASET_NAME`
+
+**Header:** `METADATASET_NAME`.
+
+Present only with `labels=name`, directly after `METADATASET_ID`.
+
+**Content:** the metadataset's localised name, e.g. `Metadata set name`.
+
+### `ACTION` (deprecated)
+
+**Header:** `ACTION`.
+
+This column was previously used for the action to be performed with the
+metadataset. It is deprecated:
+
+- Senders SHOULD NOT include it.
+- If it is present, receivers MUST ignore it.
+- To add, replace or delete metadatasets, use the appropriate HTTP method when
+  submitting the message to an SDMX REST API, as documented in
+  [Maintaining reference metadata](https://github.com/sdmx-twg/sdmx-rest/blob/complement-maintenance-doc/doc/maintenance.md#maintaining-reference-metadata).
+
+!!! warning "Open point"
+
+    The link above points to a working branch of `sdmx-rest`
+    (`complement-maintenance-doc`). It should be updated to the released
+    documentation.
+
+### `IS_PARTIAL_LANGUAGE`
+
+**Header:** `IS_PARTIAL_LANGUAGE`.
+
+This column is optional.
+
+**Content:**
+
+| Value | Meaning |
+| --- | --- |
+| `0` | The metadataset contains the complete set of available languages (default, also assumed when the column is absent) |
+| `1` | The metadataset contains only a subset of the available languages |
+
+A metadataset can contain only some of the available languages, e.g. when it
+results from an SDMX REST GET query with an `Accept-Language` header. When a
+metadataset marked `1` is submitted to an SDMX REST web service, the receiver
+MUST only add or update the included languages and MUST NOT change the other
+languages.
+
+!!! warning "Open point"
+
+    The guide does not state the effect of `0` on languages that exist in the
+    target system but are absent from the submitted metadataset (e.g. whether
+    they are deleted). To be clarified.
+
+### `TARGET_TYPES`
+
+**Header:** `TARGET_TYPES`.
+
+**Content:** the structure types of all targets of the metadataset, using the
+resource names defined for SDMX REST structural metadata queries, e.g.
+`dataflow` or `codelist`. Multiple targets are separated by the sub-field
+separator, e.g. `dataflow;dataflow`, in the same order as in
+[`TARGET_IDS`](#target_ids).
+
+### `TARGET_IDS`
+
+**Header:** `TARGET_IDS`.
+
+**Content:**
+
+- Default: the identification of all targets of the metadataset in the form
+  _AGENCY:ARTEFACT_ID(VERSION)_[^nv], separated by the sub-field separator,
+  e.g. `AGENCY:DF1(1.0.0);AGENCY:DF2(1.0.0)`.
+- With `labels=both`: each target identification and its localised name
+  separated by `": "`, e.g. `AGENCY:DF(1.0.0): Dataflow name` or
+  `AGENCY:DF1(1.0.0): Dataflow 1 name;AGENCY:DF2(1.0.0): Dataflow 2 name`.
+
+### `TARGET_NAMES`
+
+**Header:** `TARGET_NAMES`.
+
+Present only with `labels=name`, directly after `TARGET_IDS`.
+
+**Content:** the localised names of all targets, separated by the sub-field
+separator, e.g. `Dataflow name` or `Dataflow 1 name;Dataflow 2 name`.
+
+### Metadata attribute columns
+
+Each metadata attribute of the included metadataset(s) is represented in one
+column, or two columns with `labels=name`.
+
+When a message contains metadata from different metadata structures, the
+columns not related to the row's metadata structure MUST be left empty.
+
+**Header:**
+
+The full ID of a metadata attribute is its own ID prefixed by the IDs of all
+its parent metadata attributes, separated by a dot `.`, in the form
+_METADATA_ID[.METADATA_ID]+_, e.g.
+`ATTRIBUTE_GRANDPARENT_ID.ATTRIBUTE_PARENT_ID.ATTRIBUTE_CHILD_ID`. Each ID in
+this path MAY carry a suffix indicating a multi-instance (`[]`) or
+multi-lingual (`[en;fr]`) metadata attribute; see
+[Metadata attribute values](#metadata-attribute-values).
+
+| `labels` | Header | Example |
+| --- | --- | --- |
+| `id` (default) | Full ID | `CONTACT[].NAME` |
+| `both` | Full ID and localised name separated by `": "` | `CONTACT[].NAME: Contact name` |
+| `name` | Full ID, followed by an additional column whose header is the localised name | `CONTACT[].NAME`, `Contact name` |
+
+**Content:**
+
+| `labels` | Coded metadata attribute | Non-coded metadata attribute |
+| --- | --- | --- |
+| `id` (default) | Code ID(s), e.g. `A` or `A;B` | Value(s), e.g. `"<p>An XHTML text</p>"` |
+| `both` | Code ID(s) and localised name(s) separated by `": "`, e.g. `A: A value name` or `A: A value name;B: B value name` | Value(s) |
+| `name` | Code ID(s); the additional column contains the localised name(s), e.g. `A value name` or `A value name;B value name`, and is empty if the value has no localised name | Value(s); the additional column is empty |
+
+Note that `": "` may also occur inside a name and may therefore occur several
+times within a concatenated value.
+
+### Custom columns
+
+Senders MAY add any other custom columns, e.g. `publicationPeriod`,
+`publicationYear`, `reportingBegin`, `reportingEnd` or `prepared`.
+
+- The header MUST be a custom but unique term.
+- The content MAY be localised.
+
+## Metadata attribute values
+
+### Quoting
+
+- A field MUST be enclosed in double quotes if it contains the field
+  separator, a double quote or a line break; double quotes inside the field
+  MUST be escaped by doubling them (RFC 4180).
+- All string and textual values (the complete field, including IDs or language
+  codes) SHOULD be enclosed in double quotes, even when not required.
+
+!!! warning "Open point"
+
+    The recommendation to always quote textual values exists only in the
+    metadata guide, and the examples do not follow it. To be decided whether it
+    is kept, and if so, whether it also applies to data messages.
 
 ### Multi-instance metadata attributes
 
-- Values from multiple instances of a metadata attribute within a metadataset
-  are separated by the special sub-field separation character, e.g. `;`, defined
-  in the squared bracket term of the header field of the first column, e.g.
-  `MDSTRUCTURE[;]`.
-- Such metadata attributes are indicated in the column header by having their ID
-  followed by empty squared brackets "[]", e.g. `ATTR[]`.
-- For coded multi-instance metadata attributes, if option `labels=both` (see
-  *[optional parameters](#optional-parameters)*) then each individual value is
-  to be prefixed with its ID and the term ": ", e.g. `A: Value A;B: Value B`.
+- **Header:** the metadata attribute ID followed by empty square brackets,
+  e.g. `ATTR[]`.
+- **Content:** the values of all instances of the metadata attribute within
+  the metadataset, separated by the sub-field separator, e.g. `A;B`.
+- With `labels=both`, each coded value is prefixed with its ID and `": "`, e.g.
+  `A: Value A;B: Value B`.
+- Requires the sub-field separator to be declared (`MDSTRUCTURE[x]`).
 
 ### Non-coded multi-lingual metadata attributes
 
-- Non-coded metadata attributes allow for multi-lingual values. Those values are
-  separated by the special sub-field separation character, e.g. `;`, defined in
-  the squared bracket term of the header field of the first column, e.g.
-  `MDSTRUCTURE[;]`.
-- Such metadata attributes are indicated in the column header by having their ID
-  followed by the list of possible 2-letter ISO language codes separated by the
-  sub-field separator and encapsulated squared brackets "[]", e.g.
-  `ATTR[en;fr]`.
-- Each individual language value is to be prefixed with its 2-letter ISO
-  language code and a colon character ":", e.g. `en:Value;fr:Valeur`. Thus, in
-  distinction to the ID prefix for coded values when using the HTTP accept
-  header `labels=both` (see *[optional parameters](#optional-parameters)*), the
-  language prefix `xx:` doesn't have an extra space character.
+- **Header:** the metadata attribute ID followed by the list of possible
+  ISO 639-1 language codes, separated by the sub-field separator and enclosed
+  in square brackets, e.g. `ATTR[en;fr]`.
+- **Content:** each language value prefixed with its language code and a colon
+  `:`, the values separated by the sub-field separator, e.g.
+  `en:Value;fr:Valeur`. Unlike the ID prefix used with `labels=both`, there is
+  no space after the colon.
+- Requires the sub-field separator to be declared (`MDSTRUCTURE[x]`).
 
 ### Non-coded multi-lingual multi-instance metadata attributes
 
-- When non-coded multi-lingual metadata attributes have multiple instances
-  within a metadataset, then all individual values are included and separated by
-  the special sub-field separation character, e.g. `;`, defined in the squared
-  bracket term of the header field of the first column, e.g. `MDSTRUCTURE[;]`.
-- Such metadata attributes are indicated in the column header by having their ID
-  followed by squared brackets "[]" as well as by the list of possible language
-  codes separated by the sub-field separator and encapsulated in additional
-  squared brackets "[]", e.g. `ATTR[][en;fr;de]`.
-- Each individual language value is to prefixed with its 2-letter ISO language
-  code and a colon character ":", e.g. `en:Value1`.
-- Not each value needs all language versions. In order to allow knowing to which
-  value the different language items belong, each multi-lingual value set is to
-  be encapsulated in double quotes, e.g.
-  `"en:Value1;fr:Valeur1";"en:Value2;de:Wert2"`. However, note that fields with
-  double quotes must themselves be encapsulated in double quotes and that the
-  inner double quotes need to be doubled, thus the fully complete example is
+- **Header:** the metadata attribute ID followed by empty square brackets and
+  by the list of possible language codes in a second pair of square brackets,
+  e.g. `ATTR[][en;fr;de]`.
+- **Content:** all values of all instances, each language value prefixed with
+  its language code and a colon, e.g. `en:Value1`.
+- Not every instance needs all language versions. To show which language
+  values belong to which instance, each instance's value set MUST be enclosed
+  in double quotes, the sets separated by the sub-field separator, e.g.
+  `"en:Value1;fr:Valeur1";"en:Value2;de:Wert2"`. Since the field itself then
+  contains double quotes, it MUST be enclosed in double quotes and the inner
+  quotes MUST be doubled:
   `"""en:Value1;fr:Valeur1"";""en:Value2;de:Wert2"""`.
+- Requires the sub-field separator to be declared (`MDSTRUCTURE[x]`).
 
-### Non-coded XHTML-valued components
+### Nested metadata attributes
 
-- Some non-coded metadata attributes allow for XHTML values.
-- Each XHTML value is to be encapsulated in double quotes, e.g.
-  `"<p>This is some ""metadata html""</p>"`. Remember that the inner double
-  quotes need to be doubled.
-- The CSV format allows fields to contain line break characters if those fields
-  are enclosed in double quotes. Thus XHTML values can also contain line breaks,
-  although HTML viewers will ignore them.
+- Each metadata attribute is presented in its own column, even when nested.
+- **Header:** the full ID path, e.g. `CONTACT.NAME`.
+- Square brackets are added to each ID in the path that has multiple
+  instances, e.g. `CONTACT[].NAME` (multi-instance parent),
+  `CONTACT.PHONE[]` (multi-instance child) or `CONTACT[].PHONE[]` (both).
+- Language suffixes apply to the ID they follow, e.g. `PROCESS.STEP[en;fr]`,
+  or `PROCESS.STEP[][en;fr]` for multiple instances.
 
-## Optional parameters
+!!! warning "Open point"
 
-The following optional parameter can be added to the HTTP Accept header. It
-needs to be separated by the character combination `"; "`.
+    The guide does not describe how the values of a child of a multi-instance
+    parent are arranged, e.g. how the values in `CONTACT[].NAME` map to the
+    `CONTACT` instances. The data message guide specifies positional values,
+    with an empty sub-field for a parent instance without a value
+    (`a;;c`) and nested double quotes for deeper levels. Proposal: adopt the
+    same rule here.
 
-- labels (id|name|both; default=id): This parameter applies to all Nameable SDMX
-  Artefacts contained in the header and the body of the message:
-    - If the parameter value is `id` then only the id of the Artefacts is
-      displayed.
-    - If the parameter value is `both` then the concatenated id and localised name
-      of the Artefacts (see the section on [localised names](#localisation) on how
-      the message deals with languages) separated by `": "` are displayed. Note
-      that the character combination `": "` could also be part of the Artefact
-      name and could therefore occur several times within the concatenated string.
-    - If the parameter value is `name` then the id/value and the name of the
-      artefacts are displayed in separate columns (see *[here](#columns)*), the
-      ID/value column always directly preceding its related localised name column.
+### Non-coded XHTML values
+
+- Some non-coded metadata attributes allow XHTML values.
+- Each XHTML value MUST be enclosed in double quotes, with inner quotes
+  doubled, e.g. `"<p>This is some ""metadata html""</p>"`.
+- As allowed by RFC 4180 for quoted fields, XHTML values MAY contain line
+  breaks, although HTML viewers ignore them.
+
+## Rows
+
+- Each row contains one metadataset, attached to one or more targets.
+- A message MAY contain several metadatasets, for one or more metadataflows or
+  metadata provision agreements, and based on one or more metadata structures.
+
+!!! warning "Open point"
+
+    The previous text stated that "in the context of appending or deleting
+    metadata, certain columns may be omitted, see below", but no such rules
+    followed. Since `ACTION` is deprecated in favour of HTTP methods, this
+    statement has been removed. To be confirmed whether any column may be
+    omitted in maintenance requests.
+
+## HTTP integration
+
+### Media type
+
+Clients SHOULD request SDMX-CSV metadata messages with the following HTTP
+`Accept` header:
+
+`application/vnd.sdmx.metadata+csv; version=2.1.0`
+
+### Optional parameters
+
+Optional parameters MAY be added to the `Accept` header, separated by `"; "`.
+
+**`labels`** (`id` | `name` | `both`; default `id`): applies to all nameable
+SDMX artefacts in the header and the body of the message.
+
+- `id`: only the ID of artefacts is shown.
+- `name`: the ID/value and the localised name are shown in separate columns,
+  the ID/value column directly preceding its related localised name column
+  (see [Columns](#columns)).
+- `both`: the ID and the localised name are concatenated, separated by `": "`
+  (see [Localisation](#localisation) for how languages are chosen).
+
+### Localisation
+
+- Clients MAY indicate preferred languages through the HTTP
+  [`Accept-Language`](https://www.rfc-editor.org/rfc/rfc9110#field.accept-language)
+  header, e.g. `fr, en-gb;q=0.8, en;q=0.7`.
+- Senders MUST localise all artefact names according to the preferred
+  language: the best language match according to the user's preferences in
+  `Accept-Language` (or, if not available, the system's default language
+  order) is used for each localisable name element. The message does not
+  indicate the language returned per name element.
+- If no language matches for a particular name element, the sender MAY return
+  it in a system-default language or MAY omit it.
+- Senders SHOULD indicate all languages used anywhere in the message for
+  localised name elements through the HTTP `Content-Language` response header.
+- Multi-lingual metadata attribute values are not affected: all language
+  versions are always provided, independently of the preferred language (see
+  [Non-coded multi-lingual metadata attributes](#non-coded-multi-lingual-metadata-attributes)).
+  A metadataset containing only some languages is marked with
+  [`IS_PARTIAL_LANGUAGE`](#is_partial_language).
 
 ## Examples
 
-Note: All examples assume the minimal HTTP Accept header:
-`application/vnd.sdmx.metadata+csv; version=2.1.0`
+Note: unless stated otherwise, all examples assume the minimal HTTP `Accept`
+header `application/vnd.sdmx.metadata+csv; version=2.1.0`.
 
 ??? example "Ordinary case"
 
-    ``` csv
+    ```csv
     MDSTRUCTURE,MDSTRUCTURE_ID,METADATASET_ID,TARGET_TYPES,TARGET_IDS,ATTRIBUTE_1,ATTRIBUTE_1.CHILD,ATTRIBUTE_2
     metadataflow,OECD:MDF(1.0.0),OECD:MDS(1.0.0),dataflow,OECD:DF(1.0.0),A STRING VALUE,"<p>An XHTML text with ""quotes""</p>",123
     ```
 
     !!! note
-        The following default parameter settings are automatically applied:
 
-        - `labels=id`
+        The default parameter setting `labels=id` applies.
 
-??? example "Metadata attribute with multiple instances and multi-lingual
-values"
+??? example "Metadata attribute with multiple instances and multi-lingual values"
 
-    ``` csv
+    ```csv
     MDSTRUCTURE[;],MDSTRUCTURE_ID,METADATASET_ID,TARGET_TYPES,TARGET_IDS,ATTRIBUTE_1,ATTRIBUTE_1.ATTRIBUTE_1_2[][en;fr],ATTRIBUTE_2[],ATTRIBUTE_3[]
-    metadataflow,OECD:MDF(1.0.0),OECD:MDS(1.0.0),dataflow,OECD:DF(1.0.0),CODE_ID,"""en:""""<p>An XHTML text</p>"""";fr:""""<p>Un texte XHTML</p>""""";""en:""""<p>Another XHTML text</p>"""";fr:""""<p>Un autre texte XHTML</p>""""""","""Text with """"quotes"""""";""Another text""",123;456
+    metadataflow,OECD:MDF(1.0.0),OECD:MDS(1.0.0),dataflow,OECD:DF(1.0.0),CODE_ID,"""en:""""<p>An XHTML text</p>"""";fr:""""<p>Un texte XHTML</p>"""""";""en:""""<p>Another XHTML text</p>"""";fr:""""<p>Un autre texte XHTML</p>""""""","""Text with """"quotes"""""";""Another text""",123;456
     ```
 
-??? example "Localisation: HTTP Accept header:
-`application/vnd.sdmx.metadata+csv; version=1.0.0; labels=both`, HTTP
-Accept-Language header: `fr-FR, en;q=0.7`, metadata attribute with multiple
-instances, metadata attributes with multi-lingual values"
+??? example "Localisation: HTTP Accept header: `application/vnd.sdmx.metadata+csv; version=2.1.0; labels=both`, HTTP Accept-Language header: `fr-FR, en;q=0.7`"
 
-    ``` csv
-    MDSTRUCTURE[|],MDSTRUCTURE_ID;METADATASET_ID;TARGET_TYPES;TARGET_IDS;ATTRIBUTE_1: Attribut d'exemple 1;ATTRIBUTE_1.ATTRIBUTE_1_2[][en|fr]: Attribut d'exemple 12;ATTRIBUTE_2[]: Attribut d'exemple 2
+    Metadata attribute with multiple instances, metadata attributes with
+    multi-lingual values.
+
+    ```csv
+    MDSTRUCTURE[|];MDSTRUCTURE_ID;METADATASET_ID;TARGET_TYPES;TARGET_IDS;ATTRIBUTE_1: Attribut d'exemple 1;ATTRIBUTE_1.ATTRIBUTE_1_2[][en|fr]: Attribut d'exemple 12;ATTRIBUTE_2[]: Attribut d'exemple 2
     metadataflow;OECD:MDF(1.0.0): Metadataflow d'exemple;OECD:MDS(1.0.0): Metadataset d'exemple;dataflow;OECD:DF(1.0.0): Dataflow d'exemple;CODE_ID: Nom du code;"""en:""""<p>An XHTML text</p>""""|fr:""""<p>Un texte XHTML</p>""""""|""en:""""<p>Another XHTML text</p>""""|fr:""""<p>Un autre texte XHTML</p>""""""";123,45|6,789
     ```
 
-    Note that in this example the client prefers French (fr) language with the France (FR) locale, but will also accept 
-    any type of English. Therefore, in the message the French language with the France locale is applied, transforming 
-    also the field separator from comma (,) to semicolon (;), and the decimal separator from dot (.) to comma (,).
+    The client prefers French with the France locale (`fr-FR`), but also
+    accepts any English. The message therefore applies French with the France
+    locale, which also changes the field separator from comma (`,`) to
+    semicolon (`;`) and the decimal separator from dot (`.`) to comma (`,`).
+    The field separator is the character following `MDSTRUCTURE[|]`.
 
-??? example "Localisation: HTTP Accept header:
-`application/vnd.sdmx.metadata+csv; version=1.0.0; labels=name`, HTTP
-Accept-Language header: `en-US`, metadata attribute with multiple instances,
-metadata attributes with multi-lingual values, different targets and
-metadatasets"
+??? example "Localisation: HTTP Accept header: `application/vnd.sdmx.metadata+csv; version=2.1.0; labels=name`, HTTP Accept-Language header: `en-US`"
 
-    ``` csv
-    MDSTRUCTURE[;],MDSTRUCTURE_ID,MDSTRUCTURE_NAME,METADATASET_ID,METADATASET_NAME,TARGET_TYPES,TARGET_IDS,TARGET_NAMES,ATTRIBUTE_1,Attribute 1,ATTRIBUTE_1.ATTRIBUTE_1_2[][en|fr],Attribute 12,ATTRIBUTE_2[],Attribute 2
-    metadataflow,OECD:MDF(1.0.0),Metadataflow name,OECD:MDS(1.0.0),Metadataset name,dataflow;dataflow,OECD:DF(1.0.0);OECD:DF(1.1.0),Dataflow name 1;Dataflow name 2,CODE_ID,Code name,"""en:""""<p>An XHTML text</p>"""";fr:""""<p>Un texte XHTML</p>"""""";""en:""""<p>Another XHTML text</p>"""";fr:""""<p>Un autre texte XHTML</p>""""""",123.45;6.789
-    metadataflow,OECD:MDF(1.0.0),Metadataflow name,OECD:MDS(1.1.0),Metadataset new name,codelist,OECD:CL(1.0.0),Codelist name,CODE_ID,Code name,"""en:""""<p>Text 1</p>"""";fr:""""<p>Texte 1</p>"""""";""en:""""<p>Text 2</p>"""";fr:""""<p>Texte 2</p>""""""",0
+    Metadata attribute with multiple instances, metadata attributes with
+    multi-lingual values, different targets and metadatasets.
+
+    ```csv
+    MDSTRUCTURE[;],MDSTRUCTURE_ID,MDSTRUCTURE_NAME,METADATASET_ID,METADATASET_NAME,TARGET_TYPES,TARGET_IDS,TARGET_NAMES,ATTRIBUTE_1,Attribute 1,ATTRIBUTE_1.ATTRIBUTE_1_2[][en;fr],Attribute 12,ATTRIBUTE_2[],Attribute 2
+    metadataflow,OECD:MDF(1.0.0),Metadataflow name,OECD:MDS(1.0.0),Metadataset name,dataflow;dataflow,OECD:DF(1.0.0);OECD:DF(1.1.0),Dataflow name 1;Dataflow name 2,CODE_ID,Code name,"""en:""""<p>An XHTML text</p>"""";fr:""""<p>Un texte XHTML</p>"""""";""en:""""<p>Another XHTML text</p>"""";fr:""""<p>Un autre texte XHTML</p>""""""",,123.45;6.789,
+    metadataflow,OECD:MDF(1.0.0),Metadataflow name,OECD:MDS(1.1.0),Metadataset new name,codelist,OECD:CL(1.0.0),Codelist name,CODE_ID,Code name,"""en:""""<p>Text 1</p>"""";fr:""""<p>Texte 1</p>"""""";""en:""""<p>Text 2</p>"""";fr:""""<p>Texte 2</p>""""""",,0,
     ```
+
+    The name columns of the non-coded metadata attributes `ATTRIBUTE_1_2` and
+    `ATTRIBUTE_2` are empty.
 
 ??? example "Varying metadataflows"
 
-    ``` csv
+    ```csv
     MDSTRUCTURE[;],MDSTRUCTURE_ID,METADATASET_ID,TARGET_TYPES,TARGET_IDS,ATTRIBUTE_1,ATTRIBUTE_2[][en;fr;de]
     metadataflow,OECD:MDF(1.0.0),OECD:MDS(1.0.0),dataflow,OECD:DF(1.0.0),CODE_ID,"""en:Value1;fr:Valeur1"";""en:Value2;de:Wert2"""
     metadataflow,OECD:MDF(1.1.0),OECD:MDS(1.1.0),dataflow,OECD:DF(1.1.0),CODE_ID,"""en:Value1;fr:Valeur1"";""en:Value2;de:Wert2"""
     ```
 
-??? example "Non-versioned metadataset for a non-versioned[^1] data provision
-agreement"
+??? example "Non-versioned metadataset for a non-versioned metadata provision agreement"
 
-    ``` csv
+    ```csv
     MDSTRUCTURE[;],MDSTRUCTURE_ID,METADATASET_ID,TARGET_TYPES,TARGET_IDS,ATTRIBUTE_1,ATTRIBUTE_2[en;fr]
     metadataprovision,OECD:MDP,OECD:MDS,dataflow,OECD:DF(1.0.0),CODE_ID,"en:Value1;fr:Valeur1"
     ```
 
-??? example "Non-coded metadata attribute values with line-breaks"
+??? example "Non-coded metadata attribute values with line breaks"
 
-    ``` csv
+    ```csv
     MDSTRUCTURE[;],MDSTRUCTURE_ID,METADATASET_ID,TARGET_TYPES,TARGET_IDS,ATTRIBUTE_1[]
     metadataflow,OECD:MDF(1.0.0),OECD:MDS(1.0.0),dataflow,OECD:DF(1.0.0),"""This text with a line
-    break"";""This is some other text</p>"""
+    break"";""This is some other text"""
     ```
 
-??? example "Metadataflows with partial languages"
+??? example "Metadatasets with partial languages"
 
-    ``` csv
+    ```csv
     MDSTRUCTURE[;],MDSTRUCTURE_ID,METADATASET_ID,IS_PARTIAL_LANGUAGE,TARGET_TYPES,TARGET_IDS,ATTRIBUTE_1,ATTRIBUTE_2[][en]
     metadataflow,OECD:MDF(1.0.0),OECD:MDS(1.0.0),1,dataflow,OECD:DF(1.0.0),CODE_ID,"""en:Value1"";""en:Value2"""
     metadataflow,OECD:MDF(1.1.0),OECD:MDS(1.1.0),1,dataflow,OECD:DF(1.1.0),CODE_ID,"""en:Value1"";""en:Value2"""
     ```
 
-[^1]:
-    Note that since SDMX 3.0.0 the syntax *AGENCY:ARTEFACT_ID(VERSION)* allows
-    omitting the version for non-versioned artefacts. In this case using
-    *AGENCY:ARTEFACT_ID* is sufficient, e.g. `OECD:MDP`
+---
+
+[^nv]:
+    Since SDMX 3.0.0, the syntax _AGENCY:ARTEFACT_ID(VERSION)_ allows
+    omitting the version for non-versioned artefacts. In this case
+    _AGENCY:ARTEFACT_ID_ is sufficient, e.g. `OECD:MDP`.
