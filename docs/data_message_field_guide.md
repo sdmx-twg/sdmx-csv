@@ -2,487 +2,594 @@
 
 ## Introduction
 
-SDMX-CSV Data Message is an SDMX data exchange format based on the
-[RFC 4180](https://tools.ietf.org/html/rfc4180). CSV is a widely used
-standardised and simple format to exchange data supported by many tools.
+SDMX-CSV Data Message is an SDMX data exchange format based on
+[RFC 4180](https://tools.ietf.org/html/rfc4180). CSV is a widely used,
+standardised and simple format to exchange data, supported by many tools.
 
-SDMX-CSV integrates with other specifications, i.e.:
+SDMX-CSV integrates with other specifications:
 
-- The SDMX API RESTful specification (e.g. content negotiation with mime-type to
-  get SDMX-CSV representations, specific formats for responses, language
-  selection through HTTP content negotiation)
-- The [RFC 4180](https://tools.ietf.org/html/rfc4180) specification
+- The SDMX RESTful API specification (e.g. content negotiation with a media
+  type to get SDMX-CSV representations, specific formats for responses,
+  language selection through HTTP content negotiation).
+- The [RFC 4180](https://tools.ietf.org/html/rfc4180) specification.
 
-### RFC 4180: A common format for CSV files
+SDMX-CSV is designed and optimised for general public dissemination of
+statistical data and for use in common statistical software. Messages can
+also be used directly to create pivot tables in spreadsheet applications.
 
-In order to benefit from best practices, SDMX-CSV is based on the rules defined
-in the [RFC 4180](https://tools.ietf.org/html/rfc4180), which defines a common
-format and MIME Type for CSV files. It is advised to read the (very short) RFC
-for a full list of requirements but, in a nutshell, the RFC defines rules such
-as:
+### Conventions
 
-- How the CSV file should be structured (the RFC specifies that all records must
-  have an identical structure (determined column number), like when using an
-  SDMX "flat" representation for data);
-- When double-quotes should be used and how to escape them when needed;
-- How spaces should be handled: Spaces are considered part of a field and should
-  not be ignored;
-- Which mime type should be used;
-- What is the default character set, etc.
+The key words "MUST", "MUST NOT", "REQUIRED", "SHALL", "SHALL NOT", "SHOULD",
+"SHOULD NOT", "RECOMMENDED", "MAY" and "OPTIONAL" in this document are to be
+interpreted as described in [RFC 2119](https://www.rfc-editor.org/rfc/rfc2119)
+and [RFC 8174](https://www.rfc-editor.org/rfc/rfc8174) when, and only when,
+they appear in all capitals.
 
-The SDMX-CSV format is flexible enough in its representation to support the
-needs of different target audiences:
+This guide distinguishes two roles:
 
-- It is designed and optimised for the purpose of general public data
-  dissemination of statistical data, and for usage in common statistical
-  software.
-- It allows using the messages to create pivot tables in spreadsheets
-  applications.
+- **Sender**: a system that writes an SDMX-CSV message, e.g. an SDMX web
+  service returning a response, or a data provider preparing an upload.
+- **Receiver**: a system that reads an SDMX-CSV message, e.g. a client tool
+  consuming a response, or an SDMX storage system processing an upload.
 
-## Design principles for SDMX-CSV 2.1 Data Messages (aligned with SDMX 3.1)
+### RFC 4180
 
-- In order to ensure the identifiability of the data contained in the message,
-  the header row containing the column headers is mandatory and its content is
-  well-defined.
-- After the mandatory header row, each row contains the information related to
-  one specific observation or to one or more attributes attached to partial
-  keys. For `Delete` actions a row can also concern several observations if
-  dimensions are wildcarded.
-- In [RFC 4180](https://tools.ietf.org/html/rfc4180), csv stands for
-  "comma-separated values". However, while SDMX-CSV uses indeed the "comma"
-  (%x2C) as the default field separator, it adopts the wider interpretation of
-  csv as "character-separated values". It is recommended for implementers to
-  provide SDMX-CSV messages according to the locale of the user (e.g. as
-  indicated in the http Accept-Language header). It means that e.g. the
-  semi-colon ‘;’ (as used typically in specific regions or countries) is
-  acceptable as separator. See also the related example below. Note that the
-  separator used in a message can be determined by retrieving the character that
-  follows the fixed first column header term _STRUCTURE_ (which may be extended
-  by a squared bracket term).
+SDMX-CSV follows the rules of [RFC 4180](https://tools.ietf.org/html/rfc4180),
+which defines a common format and media type for CSV files. Implementers should
+read the (very short) RFC; in a nutshell it defines:
 
-### Columns
+- that all records MUST have the same number of fields as the header row;
+- when double quotes are used and how they are escaped (by doubling them);
+- that spaces are part of a field and MUST NOT be ignored;
+- the media type and the default character set.
 
-- The first column is always used for the structure type: dataflow, data
-  structure definition or data provision agreement.
-- The next one or two columns are always used for the structure's
-  identification.
-- The next column is always used for the action to be performed.
-- The next up to two columns are used for the series and/or observation key.
-- Each Data Structure Definition (DSD) component (dimensions, measures,
-  attributes including those defined through a referenced Metadata Structure
-  Definition) included in the message is represented in one or two columns. SDMX
-  web services should return the columns in the order of components as defined
-  in (each of) the underlying Data Structure Definition(s), grouped by type of
-  component, thus in case of data defined by different data structures: first
-  the dimensions of the first data structure, then the remaining dimensions of
-  the second data structure and so forth, then the measures of the first data
-  structure, then the remaining measures of the second data structure and so
-  forth, then the attributes of the first data structure, then the remaining
-  attributes of the second data structure and so forth. However, any order of
-  these columns is valid for data uploads to SDMX-consuming systems.
-- Only all those dimension columns have to be present, that are required to
-  uniquely identify the concerned attributes and/or measures.
-- Attributes can but do not need to be included even if they have a mandatory
-  status.
-- Measures can but do not have to be included.
-- When an SDMX RESTful web service implements streaming, then it might not know,
-  while generating the csv header row, which measures and attributes actually
-  have values. Therefore, it can happen that all values presented in an
-  attribute or measure column are left empty.
-- Implementers have the possibility to add any other custom columns as required,
-  e.g. updated, prepared, etc.
+SDMX-CSV extends RFC 4180 in one respect: although "CSV" stands for
+"comma-separated values" and the comma (`%x2C`) is the default field separator,
+SDMX-CSV adopts the wider interpretation "character-separated values". See
+[Separators](#separators).
 
-### Column headers (first row)
+## Message overview
 
-- The header field of the first column always contains the term `STRUCTURE`.
-    - This field must be extended with a sub-field delimiter encapsulated in
-      squared brackets "[]", e.g. `STRUCTURE[;]`, in case the message contains
-      multi-valued or multi-language measure or attribute values.
-- The header field of the second column always contains the term `STRUCTURE_ID`.
-- If option `labels=name` (see _[optional parameters](#optional-parameters)_):
-  An additional
-  column is added right after the artefact identification column containing the
-  term `STRUCTURE_NAME`.
-- The header field of the next column should contain the term `ACTION`. For
-  convenience, if this column is not present, a default action ("Information")
-  is assumed for the whole message.
-- The next up to two columns contain, if option `key=series|obs|both` (see
-  _[optional parameters](#optional-parameters)_), in this order the terms `SERIES_KEY`
-  and/or `OBS_KEY`.
-- The other columns for components contain:
-    - Default: The ID of the component reported in that column, e.g. `DIM1`.
-    - If option `labels=both` (see _[optional parameters](#optional-parameters)_):
-      The ID and the localised name of the component reported in that column
-      separated by the term ": ", e.g. `DIM1: Dimension 1`.
-    - If option `labels=name` (see _[optional parameters](#optional-parameters)_): An additional
-      column is added right after the component identification column containing
-      the localised name of the component reported in the previous column.
-- Any other custom column contains a custom but unique term, e.g. `UPDATED`.
+An SDMX-CSV data message consists of one mandatory header row followed by any
+number of data rows. Each data row contains either:
 
-### Column content (all rows after header)
+- the information related to **one observation**, or
+- the information related to **one or more attributes attached to a partial
+  key**, or
+- for _Delete_ actions only, information concerning **several observations**
+  when dimensions are wildcarded.
 
-- The first column contains: `dataflow`, `datastructure` or `dataprovision`,
-  depending on type of artefact for which the data contained in the row are
-  defined: dataflow, data structure definition or data provision agreement.
-- The second column contains:
-    - Default: The artefact identification information for the data in the row in
-      the form _AGENCY:ARTEFACT_ID(VERSION)_[^1], e.g. `ESTAT:NA_MAIN(1.6.0)`.
-    - If option `labels=both` (see _[optional parameters](#optional-parameters)_): The artefact
-      identification information and its localised name separated by the term ":
-      ", e.g. `ESTAT:NA_MAIN(1.6.0): National Accounts Main Aggregates`.
-- If option `labels=name` (see _[optional parameters](#optional-parameters)_): An additional
-  column is added right after the artefact identification column with the
-  artefact's localised name, e.g. `National Accounts Main Aggregates`.
-- The next column contains one character representing one of the current 4
-  action types:
-      - "I": Information - Deprecated. When used to update an SDMX storage system,
-          the _Merge_ action is assumed.
-      - "A": Append -  Deprecated. When used to update an SDMX storage system,
-          the _Merge_ action is assumed.
-      - "M": Merge - Data or data-related reference metadata is to be merged,
-          through either update or insertion depending on already existing
-          information. This operation does not allow deleting any component
-          values. Updating individual values in multi-valued measure, attribute
-          or data-related reference metadata values is not supported either. The
-          complete multi-valued value is to be provided.  Only non-dimensional
-          components (measure, attribute or data-related reference metadata values)
-          can be **omitted** (\<empty\> cell or column is absent) as long as at
-          least one of those components is present. Bulk merges are thus not
-          supported. Only the provided values are merged.  Dimension values for
-          higher-level (data-related reference metadata) attributes can be
-          **switched-off** (using `~`) when those are not attached to these dimensions.
-          All observations as well as the sets of data-related reference metadata
-          attributes at specific dimension combinations impacted by the _Merge_
-          action change their time stamp when used to update an SDMX storage system.
-      - "R": Replace - Data or data-related reference metadata is to be replaced,
-          through either update, insert or delete depending on already existing
-          information. A full replacement is hereby assumed to take place at
-          specific “replacement levels”: for entire observations and for any
-          specific dimension combination for data-related reference metadata
-          attributes. Within these “replacement levels” the provided values are
-          inserted or updated, and omitted values are deleted. Values provided for
-          the other attributes (those above the observation level) are merged (see
-          _Merge_ action).  Only non-dimensional components (measure, attribute or
-          reference metadata values) can be **omitted** (\<empty\> cell or column is
-          absent). Bulk replacing is thus not supported.  Dimension values for
-          higher-level (data-related reference metadata) attributes can be
-          **switched-off** (using `~`) when those are not attached to these dimensions.
-          Replacing non-existing elements is not resulting in an error.  All 
-          observations as well as the sets of data-related reference metadata 
-          attributes at specific dimension combinations impacted by the _Replace_ 
-          action change their time stamp when used to update an SDMX storage system.
-          Because the _replace_ action always takes place at specific levels, it 
-          cannot be used to replace a whole dataset or a whole series. However, a 
-          “_replace all_” effect can be achieved by combining a _Delete_ row 
-          containing a completely wildcarded key (where all dimension values are 
-          omitted) with _Merge_ or _Replace_ rows within the same data message. 
-          Similarly, to replace a whole series, a message can combine a _delete_ 
-          row containing only the partial key of the series (where the not used 
-          dimension values are omitted) with _Merge_ or _Replace_ rows for that series.
-      - "D": Delete - Data or data-related reference metadata is to be deleted. 
-          Deletion is hereby assumed to take place at the lowest level of detail 
-          provided in the message.  Any component (including dimensions) can be 
-          **omitted** (\<empty\> cell or column is absent). Omitting dimension 
-          values allows for bulk deletions. Partially omitting non-dimension 
-          component values allows restricting the deletion of measure, attribute 
-          or data-related reference metadata values to the ones being present. 
-          Instead of real values for non-dimensional components, it is sufficient 
-          to use any valid value, e.g. the dash character `-`.  With this, all 
-          dataflow data, any slices of observations for dimension groups such as 
-          time series, observations or individual measure, attribute and 
-          data-related reference metadata attributes values can be deleted.
-          Dimension values for higher-level (data-related reference metadata) 
-          attributes can be **switched-off** (using `~`) when those are not 
-          attached to these dimensions.  Deleting non-existing elements or 
-          values is not resulting in an error.  All observations as well as the 
-          sets of attributes and data-related reference metadata at higher partial 
-          keys impacted by the _Delete_ action change their time stamp when used to 
-          update an SDMX storage system.
-      - For convenience, if this column is absent then the _Merge_ action is assumed.  
-        For more details see [here](#further-details-for-data-actions).
-- The next up to two columns contain, if option `key=series|obs|both`, in this
-  order the series keys and/or the observation keys (see
-  _[optional parameters](#optional-parameters)_).
-- The other columns for components contain:
-    - Default: The ID(s) (if coded) or value(s) (if non-coded) for the component
-      values reported in that column for the corresponding observation, e.g. `A`.
-    - If option `labels=both` (see _[optional parameters](#optional-parameters)_):
-      The ID(s) and
-      the localised name separated by the term ": " (if coded) or the value(s) (if
-      non-coded) for the component values reported in that column for the
-      corresponding observation, e.g. `A: A value name`.
-    - If option `labels=name` (see _[optional parameters](#optional-parameters)_):
-      An additional
-      column is added right after the component identification column containing
-      the localised name, e.g. `A value name`, of the component value reported in
-      the previous column. It is empty if the value has no localised name.
-    - For rows containing the information related to one specific observation, the
-      related values for attributes attached to partial keys may have to be
-      replicated.
-    - For rows containing the information related to one or more attributes
-      attached to partial keys, in addition to these attributes only the
-      components that are part of the partial key need to be filled, all other
-      components can be left empty. Also the columns not related to the
-      attribute's data structure (when data from different data structures are
-      present) are to be left empty.
-    - For rows containing information to be deleted, the deletion is assumed to
-      take place at the lowest level of detail provided in the message. For that
-      purpose, to be deleted measure or attribute values are non-empty, e.g.
-      marked with the dash character "-". Delete operations allow wildcarding
-      dimensions by leaving the corresponding dimension field empty.
-- The other custom columns contain any potentially localised custom content.
+```csv
+STRUCTURE,STRUCTURE_ID,ACTION,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_1
+dataflow,ESTAT:NA_MAIN(1.6.0),M,A,B,2014-01,12.4,N
+```
 
-## Further details for data actions
+### Column overview
 
-The following convention is used to indicate the state of components in data messages:
+| Column name | Description | Position |
+| --- | --- | --- |
+| **Fixed columns** | | |
+| [`STRUCTURE`](#structure) | Type of structure for which the row's data is defined: `dataflow`, `datastructure` or `dataprovision`. The character directly after this term is the field separator. | 1 |
+| [`STRUCTURE[;]`](#structure) | `STRUCTURE` extended with the sub-field separator in square brackets. REQUIRED when the message contains multi-valued or multi-lingual values. | 1 |
+| [`STRUCTURE_ID`](#structure_id) | Artefact identification `AGENCY:ID(VERSION)`. | 2 |
+| [`STRUCTURE_NAME`](#structure_name) | Localised name of the artefact. Only with `labels=name`. | 3 (optional) |
+| [`ACTION`](#action) | Action code: `M` Merge, `R` Replace, `D` Delete (`I` and `A` deprecated). | Directly after the structure identification (optional) |
+| [`SERIES_KEY`](#series_key-and-obs_key) | Series key. Only with `keys=series` or `keys=both`. | Directly after `ACTION` (optional) |
+| [`OBS_KEY`](#series_key-and-obs_key) | Observation key. Only with `keys=obs` or `keys=both`. | Directly after `SERIES_KEY` if present (optional) |
+| **Component columns** | | |
+| [`EXAMPLE`](#component-columns) | Component ID (dimension, measure, attribute, incl. metadata attributes). | After the fixed columns |
+| [`EXAMPLE: Name`](#component-columns) | ID and localised name in one header. Only with `labels=both`. | Replaces `EXAMPLE` |
+| [`Name`](#component-columns) | Additional column with localised names. Only with `labels=name`. | Directly after its component column |
+| [`EXAMPLE[]`](#multi-valued-components) | Multi-valued component. | — |
+| [`EXAMPLE[en;fr]`](#non-coded-multi-lingual-components) | Non-coded multi-lingual component (also used for multi-lingual multi-valued components). | — |
+| [`PARENT.CHILD`](#nested-metadata-attributes) | Nested metadata attribute. | — |
+| [`PARENT[].CHILD[]`](#nested-metadata-attributes) | Nested metadata attribute of a multi-valued parent attribute. | — |
+| **Other columns** | | |
+| [`UPDATED`](#custom-columns) (any custom term) | Implementer-defined column. | Not specified |
 
-|  |  | **Dimension value is** | | **Measure, attribute or reference metadata value is** | |
-| --- | --- | --- | --- | --- | --- |
-|  |  | **Omitted** | **switched off** | **Omitted** | **Present** |
-| Action | Delete | bulk deletion: dimension value doesn't matter | only for irrelevant dimensions:1) higher-level (reference metadata) attributes not attached to this dimension(incl. TIME\_PERIOD)2) measures and attributes not attached to this dimension if the DSD allows for an ‘evolving structure’ (excl. TIME\_PERIOD) | to be deleted only if **all** non-dimension components are omitted | to be deleted |
-| | Merge | *bulk merge is not permitted* | (see above) | not to be changed | to be updated/inserted |
-| | Replace | *bulk replace is not permitted* | (see above) | at permitted replacement levels: to be deleted, otherwise not to be changed | to be updated/inserted |
-| Format | CSV | \<empty\> cell or column is absent | ~ | \<empty\> cell or column is absent | any valid or intentionally missing value |
+Header suffixes combine: e.g. `COLLECTION.METHOD[en;fr]` is a nested,
+multi-lingual metadata attribute.
 
-**Important notes:**
+## Separators
 
-The terms “*delete*”, “*merge*” and “*replace*” do **not** imply a physical 
-replacement or deletion of values in the underlying database. To minimize the 
-physical resource requirements, SDMX web service implementations that do not 
-support the *includeHistory* and *asOf* URL parameters might physically replace 
-the existing values in the database. SDMX web services that neither support the 
-*updatedAfter* URL parameter might also implement physical deletions. However, 
-SDMX web services that support these parameters (or other time-machine features), 
-would not overwrite or delete the physical values.
+### Field separator
 
-SDMX web services that support the *includeHistory* or *asOf* URL parameters 
-should never allow deleting their **historic** data content because this would 
-interfere with the interests of data consumers, such as data aggregators. 
-Therefore, a specific feature to physically delete previous (outdated) content 
-is intentionally not added to the SDMX standard syntax. If such a feature is 
-required by an organisation, then it needs to be implemented as a custom feature 
-outside the SDMX standard.
+- Senders SHOULD use the comma `,` as field separator, unless the user's locale
+  (e.g. as indicated in the HTTP `Accept-Language` header) calls for another
+  one, e.g. the semicolon `;` used in some regions or countries.
+- The field separator of a message is the character directly following the
+  fixed first header term `STRUCTURE`, or, when that term is extended with a
+  square-bracket term (see below), the character directly following `]`.
+  Receivers MUST determine the field separator this way.
 
-Likewise, all SDMX-compliant systems that do (or are configured to) support the 
-*updatedAfter* URL parameter need to systematically retain the information about 
-deleted data (or data-related reference metadata).
+### Sub-field separator
 
-All datasets – even with varying actions – within a single data message have 
-always to be treated as **ACID transaction** to guarantee “transactional safety” 
-(full data consistency and validity despite errors, power failures, and other 
-mishaps). These datasets are to be processed in the order of appearance in the 
-message. The advantage of such data messages is thus the ability to bundle 
-separate *delete* and *replace* or *merge* actions into one transactional data message.
-
-**Recommended[^1] dataset actions in SDMX web service responses to GET data queries:**
-
-1. Without the *updatedAfter*, *includeHistory*, *detail*, *attributes* or 
-    *measures* URL parameters:  
-
-   The response message should contain the retrieved data in a *Replace* dataset 
-    (instead of the previous *information* dataset).
-
-2. Without the *updatedAfter* and *includeHistory*, but with *detail*, 
-    *attributes* or *measures* URL parameters:  
-
-   The response message should contain the retrieved data in a *Merge* dataset 
-    (instead of the previous *Information* dataset).
-
-3. With the *updatedAfter* URL parameter:  
-
-   The response must include the information of all previously updated, inserted 
-    and deleted data or data-related reference metadata, even if bulk deletions 
-    have been used. One of the two approaches are possible:
-
-   - a *Delete* dataset for entirely deleted observations and for entirely 
-       deleted sets of (data-related reference metadata) attribute values attached 
-       to specific dimension combinations and  
-   - a *Replace* dataset for all other changed observations and changed attribute 
-      and data-related reference metadata values attached to specific dimension 
-      combinations, or  
-   - a *Delete* dataset for entirely deleted observations, for entirely deleted 
-      sets of (data-related reference metadata) attribute values attached to 
-      specific dimension combinations and for individually deleted measure, 
-      attribute and reference metadata values and  
-   - a *Merge* dataset for all other updated or inserted observation, attribute and 
-      data-related reference metadata values.
-
-   The DB synchronization use case requires that the generated response must 
-    always allow achieving to replicate the exact same punctual data content as 
-    currently stored in the queried data source.
-
-4. With the *includeHistory* URL parameter:  
-
-   Using a number of datasets with *Delete*, *Replace* or *Merge* actions and 
-    limited in their validity time span that allow achieving to replicate the 
-    exact same punctual data contents as previously stored in the queried data source.
-
-5. With the *asOf* URL parameter:  
-
-   The recommendations of 1 and 2 apply depending on the other parameters. In 
-    addition, the returned dataset should have its validity time span limited to 
-    the point in time requested in the *asOf* parameter.
-
-[^1]: So far this is recommended for systems that do not require backward-compatibility. Later, with SDMX 4.0, this may generally be made mandatory.
-
-## Intentionally missing values
-
-To indicate **intentionally missing** observations, attributes and reference 
-  metadata values, even if mandatory, the following special values are to be 
-  used in SDMX-CSV:
-
-- Numeric data types float and double: `NaN`
-- All other data types: `#N/A`
-
-### Localisation
-
-- HTTP content negotiation, see
-  [RFC 2616 - HTTP 1.1 Header Field Definitions](https://www.w3.org/Protocols/rfc2616/rfc2616-sec14.html)
-    - Always use this mime-type in the Accept header:
-      `application/vnd.sdmx.data+csv; version=2.0.0`.
-    - The client can indicate preferred languages through the Accept-Language
-      header, e.g. `fr, en-gb;q=0.8, en;q=0.7`.
-- Always localise all artefact names according to the preferred language. The
-  first best language match according to the user’s preferred language choices
-  in the http Accept-Language header (or if that is not available than according
-  to the system's default language order) is to be used for each localisable
-  name element. The message does however not indicate the returned language per
-  localisable name element. In case that there is no such language match for a
-  particular localisable name element, it is optional to return the element in a
-  system-default language or alternatively to not return the element. **It is
-  recommended to indicate all languages used anywhere in the message for
-  localised name elements through http Content-Language response header
-  (languages of the intended audience).**  
-  Note: For multi-language values, all language versions are provided
-  independently from the preferred language (see below).
-
-### Multi-valued components and nested metadata attributes
-
-- Some components (measures or attributes) allow for multiple values. Those
-  multiple values are separated by a special sub-field separation character,
+- Multi-valued and multi-lingual component values use a sub-field separator,
   e.g. `;`.
-- This sub-field separation character has to be defined as first character in
-  the squared bracket term of the header field of the first column, e.g.
-  `STRUCTURE[;]`.
-- Such components are indicated by having their IDs followed by empty squared
-  brackets "[]", e.g. `ATTR4[]`.
-- For coded multi-valued components, if option `labels=both` (see
-  _[optional parameters](#optional-parameters)_) then each individual value is to be prefixed
-  with its ID and the term ": ", e.g. `A: Value A;B: Value B`.
-- Each metadata attribute is also to be presented in its own column(s), even if
-  the metadata attributes are nested. In that case, the attribute IDs in the
-  column headers are pre-fixed with the IDs of the related parent attribute(s)
-  separated by a dot `.`, e.g. `CONTACT[].NAME[]`. All the values corresponding
-  to one attribute are presented like a multi-valued component by respecting
-  their position in the nested attribute tree, e.g.
-  `name for contact 1;name for contact 2`. Parent branches in that attribute
-  tree without a value for a specific attribute need to be indicated by leaving
-  the corresponding multi-value sub-field empty, e.g.
-  `name for contact 1;;name for contact 3`. Nested parent branches are indicated
-  by using nested double quotes. Note that fields containing double quotes must
-  themselves be encapsulated in double quotes and that nested inner double
-  quotes need to be doubled recursively, e.g.
-  `"""name 1 for contact 1;name 2 for contact 1"";""name 1 for contact 2;name 2 for contact 2"""`.
+- When a message contains such values, the sender MUST declare the sub-field
+  separator as the only character inside square brackets appended to the first
+  header term, e.g. `STRUCTURE[;]` or `STRUCTURE[|]`.
+- The sub-field separator MUST differ from the field separator.
+
+## Columns
+
+### Column order
+
+1. `STRUCTURE`
+2. `STRUCTURE_ID`
+3. `STRUCTURE_NAME` (only with `labels=name`)
+4. `ACTION` (optional)
+5. `SERIES_KEY` and/or `OBS_KEY`, in this order (only with the `keys`
+   parameter)
+6. Component columns
+7. Custom columns (any position)
+
+The fixed columns (1–5) MUST appear in this order, without gaps between those
+present.
+
+Component columns:
+
+- SDMX web services SHOULD return component columns in the order in which the
+  components are defined in the underlying data structure definition(s),
+  grouped by type of component. When data from several data structures are
+  present: first the dimensions of the first data structure, then the remaining
+  dimensions of the second data structure and so forth; then the measures in
+  the same way; then the attributes in the same way.
+- Receivers processing uploads MUST accept component columns in any order.
+
+### `STRUCTURE`
+
+**Header:** `STRUCTURE`, or `STRUCTURE[x]` where `x` is the sub-field separator
+(see [Sub-field separator](#sub-field-separator)).
+
+**Content:** the type of artefact for which the data in the row are defined:
+
+| Value | Artefact |
+| --- | --- |
+| `dataflow` | Dataflow |
+| `datastructure` | Data structure definition |
+| `dataprovision` | Data provision agreement |
+
+A message MAY contain rows for different artefacts, including artefacts based
+on different data structures (see [Rows](#rows)).
+
+### `STRUCTURE_ID`
+
+**Header:** `STRUCTURE_ID`.
+
+**Content:**
+
+- Default: the artefact identification in the form
+  _AGENCY:ARTEFACT_ID(VERSION)_, e.g. `ESTAT:NA_MAIN(1.6.0)`. For
+  non-versioned artefacts the version is omitted, e.g. `AGENCY:DF_ID`[^nv].
+- With `labels=both`: the artefact identification and its localised name
+  separated by `": "`, e.g.
+  `ESTAT:NA_MAIN(1.6.0): National Accounts Main Aggregates`.
+
+### `STRUCTURE_NAME`
+
+**Header:** `STRUCTURE_NAME`.
+
+Present only with `labels=name`, directly after `STRUCTURE_ID`.
+
+**Content:** the artefact's localised name, e.g.
+`National Accounts Main Aggregates`.
+
+### `ACTION`
+
+**Header:** `ACTION`.
+
+Senders SHOULD include this column. If present, it MUST directly follow the
+structure identification column(s).
+
+**Content:** one character representing the action to be performed with the
+row's data:
+
+| Code | Action | Status |
+| --- | --- | --- |
+| `M` | Merge | Current |
+| `R` | Replace | Current |
+| `D` | Delete | Current |
+| `I` | Information | Deprecated; receivers updating an SDMX storage system MUST process it as Merge |
+| `A` | Append | Deprecated; receivers updating an SDMX storage system MUST process it as Merge |
+
+If the `ACTION` column is absent, receivers MUST process all rows of the
+message as Merge.
+
+The semantics of each action are described in [Data actions](#data-actions).
+
+### `SERIES_KEY` and `OBS_KEY`
+
+**Headers:** `SERIES_KEY`, `OBS_KEY`.
+
+Present only when requested through the [`keys`](#optional-parameters)
+parameter, directly after `ACTION` (or after the structure identification if
+`ACTION` is absent). If both are present, `SERIES_KEY` comes first.
+
+**Content:**
+
+- `SERIES_KEY`: the IDs/values of all dimensions except the one(s) attached to
+  the observation, in data structure order, separated by a dot `.`, e.g.
+  `M.USD.EUR.SP00`.
+- `OBS_KEY`: the IDs/values of all dimensions, in data structure order,
+  separated by a dot `.`, e.g. `M.USD.EUR.SP00.2020-01`.
+
+!!! warning "Open point"
+
+    Earlier versions of this guide used both `key=` and `keys=` for this
+    parameter. This version uses `keys` throughout, as defined in
+    [Optional parameters](#optional-parameters). To be confirmed by the TWG.
+
+### Component columns
+
+Each data structure component included in the message (dimensions, measures,
+attributes, including metadata attributes defined through a referenced
+metadata structure definition) is represented in one column, or two columns
+with `labels=name`.
+
+**Inclusion rules:**
+
+- A message MUST include the dimension columns required to uniquely identify
+  the measures and attributes it contains. Other dimension columns MAY be
+  omitted (see [Rows](#rows) and [Data actions](#data-actions)).
+- Measure columns MAY be omitted.
+- Attribute columns MAY be omitted, even for attributes with a mandatory
+  status.
+- When an SDMX web service streams its response, it may not know, while
+  writing the header row, which measures and attributes will have values. A
+  measure or attribute column MAY therefore contain only empty values.
+
+**Header:**
+
+| `labels` | Header | Example |
+| --- | --- | --- |
+| `id` (default) | Component ID | `DIM_1` |
+| `both` | Component ID and localised name separated by `": "` | `DIM_1: Dimension 1` |
+| `name` | Component ID, followed by an additional column whose header is the localised name | `DIM_1`, `Dimension 1` |
+
+The component ID MAY be followed by a suffix indicating a multi-valued
+(`[]`), multi-lingual (`[en;fr]`) or nested (`PARENT.CHILD`) component; see
+[Component values](#component-values).
+
+**Content:**
+
+| `labels` | Coded component | Non-coded component |
+| --- | --- | --- |
+| `id` (default) | Code ID, e.g. `A` | Value |
+| `both` | Code ID and localised name separated by `": "`, e.g. `A: A value name` | Value |
+| `name` | Code ID; the additional column contains the localised name, e.g. `A value name`, and is empty if the value has no localised name | Value; the additional column is empty |
+
+Note that `": "` may also occur inside a name and may therefore occur several
+times within a concatenated value.
+
+### Custom columns
+
+Senders MAY add any other custom columns, e.g. `UPDATED` or `PREPARED`.
+
+- The header MUST be a custom but unique term.
+- The content MAY be localised.
+
+## Component values
+
+### Multi-valued components
+
+- **Header:** the component ID followed by empty square brackets, e.g.
+  `ATTR_1[]`.
+- **Content:** the values separated by the sub-field separator, e.g. `X;Y`.
+- With `labels=both`, each coded value is prefixed with its ID and `": "`, e.g.
+  `A: Value A;B: Value B`.
+- Requires the sub-field separator to be declared (`STRUCTURE[x]`).
 
 ### Non-coded multi-lingual components
 
-- Some non-coded components (measures or attributes) allow for multi-lingual
-  values. Those values are separated by a special sub-field separation
-  character, e.g. `;`.
-- This sub-field separation character has to be defined as first character in
-  the squared bracket term of the header field of the first column, e.g.
-  `STRUCTURE[;]`.
-- Such components are indicated by having their IDs followed by the list of
-  possible 2-letter ISO language codes separated by the sub-field separator and
-  encapsulated squared brackets "[]", e.g. `ATTR2[en;fr]`.
-- Each individual language value is to be prefixed with its 2-letter ISO
-  language code and a colon character ":", e.g. `en:Value;fr:Valeur`. Thus, in
-  distinction to the ID prefix for coded values when using the HTTP accept
-  header `labels=both` (see _[optional parameters](#optional-parameters)_), the language prefix
-  `xx:` doesn't have an extra space character.
-- Note that multi-lingual components are always non-coded and therefore do not
-  interfere with value IDs.
+- **Header:** the component ID followed by the list of possible ISO 639-1
+  language codes, separated by the sub-field separator and enclosed in square
+  brackets, e.g. `ATTR_2[en;fr]`.
+- **Content:** each language value prefixed with its language code and a colon
+  `:`, the values separated by the sub-field separator, e.g.
+  `en:Value;fr:Valeur`. Unlike the ID prefix used with `labels=both`, there is
+  no space after the colon.
+- Multi-lingual components are always non-coded, so the language prefix cannot
+  be confused with code IDs.
+- Requires the sub-field separator to be declared (`STRUCTURE[x]`).
 
 ### Non-coded multi-lingual multi-valued components
 
-- Some non-coded components (measures or attributes) allow for multiple
-  multi-lingual values. All individual values are separated by a special
-  sub-field separation character, e.g. `;`.
-- This sub-field separation character has to be defined as first character in
-  the squared bracket term of the header field of the first column, e.g.
-  `STRUCTURE[;]`.
-- Such components are indicated by having its ID followed by the list of
-  possible language codes separated by the sub-field separator and encapsulated
-  squared brackets "[]", e.g. `ATTR2[en;fr;de]`.
-- Each individual language value is to prefixed with its 2-letter ISO language
-  code and a colon character ":", e.g. `en:Value1`.
-- Each multi-lingual value set is to be encapsulated in double quotes, e.g.
-  `"en:Value1;fr:Valeur1";"en:Value2;de:Wert2"`. However, note that fields
-  containing double quotes must themselves be encapsulated in double quotes and
-  that the inner double quotes need to be doubled, thus the complete example is
+- **Header:** the same as for multi-lingual components, e.g.
+  `ATTR_2[en;fr;de]`.
+- **Content:** each multi-lingual value set enclosed in double quotes, the sets
+  separated by the sub-field separator, e.g.
+  `"en:Value1;fr:Valeur1";"en:Value2;de:Wert2"`. Since the field itself
+  contains double quotes, it MUST be enclosed in double quotes and the inner
+  quotes MUST be doubled:
   `"""en:Value1;fr:Valeur1"";""en:Value2;de:Wert2"""`.
 
-### Non-coded XHTML-valued components
+!!! warning "Open point"
 
-- Some non-coded components (measures or attributes) allow for XHTML values.
-- Each XHTML value is to be encapsulated in double quotes, e.g.
-  `"<p>This is some ""metadata html""</p>"`. Remember that the inner quotes need
-  to be doubled.
-- The CSV format allows fields to contain line breaks if those fields are
-  enclosed in double quotes. Thus XHTML values can also contain line breaks.
+    The header syntax is identical for multi-lingual and multi-lingual
+    multi-valued components, so a receiver can only tell them apart from the
+    data structure definition. The TWG should decide whether a distinct header
+    syntax is needed.
 
-## Optional parameters
+### Nested metadata attributes
 
-Optional parameters can be added to the HTTP Accept header. They need to be
-separated by the character combination `"; "`.
+- Each metadata attribute is presented in its own column(s), even when nested.
+- **Header:** the attribute ID prefixed with the IDs of its parent
+  attribute(s), separated by a dot `.`, e.g. `COLLECTION.METHOD`. When the
+  parent is multi-valued, e.g. `CONTACT[].NAME[]`.
+- **Content:** all values of the attribute, presented like a multi-valued
+  component and respecting their position in the attribute tree, e.g.
+  `name for contact 1;name for contact 2`.
+- A parent branch without a value for the attribute is indicated by an empty
+  sub-field, e.g. `name for contact 1;;name for contact 3`.
+- Nested parent branches are indicated by nested double quotes, with inner
+  quotes doubled recursively, e.g.
+  `"""name 1 for contact 1;name 2 for contact 1"";""name 1 for contact 2;name 2 for contact 2"""`.
 
-- labels (id|name|both; default=id): This parameter applies to all Nameable SDMX
-  Artefacts contained in the header and the body of the message:
-    - If the parameter value is `id` then only the id/value of the artefacts is
-      displayed.
-    - If the parameter value is `name` then the id/value and the name of the
-      artefacts are displayed in separate columns (see _[columns](#columns)_), the
-      ID/value column always directly preceding its related localised name column.
-    - If the parameter value is `both` then the concatenated id/value and
-      localised name of the artefacts (see the section on
-      [localised names](#localisation) on how the message deals with languages)
-      separated by `": "` are displayed. Note that the character combination
-      `": "` could also be part of the artefact name and could therefore occur
-      several times within the concatenated string.
-- timeFormat (original|normalized; default=original):
-    - If the parameter value is `original` then the time dimension (_TIME-PERIOD_)
-      values are displayed in the SDMX _TIME_PERIOD_ format as originally
-      recorded.
-    - If the parameter value is `normalized` then the time dimension
-      (_TIME_PERIOD_) values are converted to the most granular
-      [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html)
-      representation taking into account the highest frequency of the data in the
-      message and the moment in time when the lower-frequency values were
-      collected (which, e.g. at the ECB, is typically either at the beginning,
-      middle or end of the reporting period). This eases comparisons and business
-      analysis of multi-frequency values, e.g. in pivot tables. As an example, if
-      annual and daily data are available in the message and the annual data were
-      collected at the end of the reporting period, the formatted value for the
-      annual period 2014 becomes 2014-12-31.
-- keys (none|obs|series|both; default=none): Request the addition of column(s)
-  for keys.
-    - If the value is `none` (the default), no related column will be added.
-    - If the value is `obs`, a new column OBS_KEY will be added after the ACTION
-      column. The column will contain the combination of IDs/values for all the
-      dimensions, order by their order in the data structure definition and
-      separated by a dot character (.), e.g. M.USD.EUR.SP00.2020-01
-    - If the value is `series`, a new column SERIES_KEY will be added after the
-      ACTION column. The column will contain the combination of IDs/values for all
-      the dimensions except the one(s) attached to the observation, ordered by
-      their order in the data structure definition and separated by a dot
-      character (.), e.g. M.USD.EUR.SP00
-    - If the value is `both`, both a SERIES_KEY and an OBS_KEY columns must be
-      added after the ACTION column, starting with the SERIES_KEY column.
+!!! warning "Open point"
+
+    The only example uses `CONTACT[].NAME[]`, where the child also carries
+    `[]`. To be confirmed whether the child's `[]` is required or only
+    present because the child is itself multi-valued.
+
+### Non-coded XHTML values
+
+- Some non-coded components allow XHTML values.
+- Each XHTML value MUST be enclosed in double quotes, with inner quotes
+  doubled, e.g. `"<p>This is some ""metadata html""</p>"`.
+- As allowed by RFC 4180 for quoted fields, XHTML values MAY contain line
+  breaks.
+
+### Special values
+
+| Value | Meaning | Applies to |
+| --- | --- | --- |
+| _(empty)_ | Omitted: the value is not provided (see [Data actions](#data-actions) for the effect per action) | All components |
+| `~` | Switched off: the dimension is not relevant for this row (see [Data actions](#data-actions)) | Dimensions |
+| `NaN` | Intentionally missing value | Measures and attributes of type float or double |
+| `#N/A` | Intentionally missing value | Measures and attributes of all other types |
+| `-` (or any valid value) | Marks a value to be deleted in a _Delete_ row | Measures and attributes |
+
+Intentionally missing values MUST be used to indicate observations,
+attributes or reference metadata values that are deliberately missing, even
+if they are mandatory.
+
+## Rows
+
+- **Observation rows** contain the dimension values identifying one
+  observation and its measure and attribute values. Values of attributes
+  attached to partial keys MAY have to be repeated on each observation row.
+- **Partial-key attribute rows** contain the attribute values attached to a
+  partial key. Only the dimensions that are part of the partial key need to be
+  filled; all other component columns MAY be left empty.
+- **Delete rows** concern data at the lowest level of detail provided. To
+  delete specific measure or attribute values, those values are non-empty,
+  e.g. marked with `-`. Dimensions MAY be wildcarded by leaving the field
+  empty.
+- **Multiple structures:** when a message contains data from different data
+  structures, the columns not related to the row's data structure MUST be left
+  empty.
+
+## Data actions
+
+### Component states per action
+
+| | Dimension value omitted | Dimension value switched off | Measure, attribute or reference metadata value omitted | Measure, attribute or reference metadata value present |
+| --- | --- | --- | --- | --- |
+| **Delete** | Bulk deletion: the dimension value doesn't matter | Only for irrelevant dimensions (see below) | Deleted only if **all** non-dimension components are omitted | Deleted |
+| **Merge** | _Bulk merge is not permitted_ | Only for irrelevant dimensions (see below) | Not changed | Updated or inserted |
+| **Replace** | _Bulk replace is not permitted_ | Only for irrelevant dimensions (see below) | At permitted replacement levels: deleted; otherwise not changed | Updated or inserted |
+| **CSV representation** | Empty cell, or column absent | `~` | Empty cell, or column absent | Any valid or intentionally missing value |
+
+A dimension is irrelevant, and MAY be switched off, for:
+
+1. higher-level (reference metadata) attributes not attached to this
+   dimension (including `TIME_PERIOD`);
+2. measures and attributes not attached to this dimension, if the data
+   structure allows for an "evolving structure" (excluding `TIME_PERIOD`).
+
+### Merge (`M`)
+
+Data or data-related reference metadata is merged, through either update or
+insertion depending on already existing information.
+
+- Merge does not delete any component values.
+- Individual values within multi-valued measures, attributes or data-related
+  reference metadata cannot be updated; the complete multi-valued value MUST be
+  provided.
+- Only non-dimension components (measures, attributes, data-related reference
+  metadata) MAY be omitted, as long as at least one of them is present. Bulk
+  merges are therefore not supported. Only the provided values are merged.
+- Dimension values for higher-level (data-related reference metadata)
+  attributes MAY be switched off (`~`) when those attributes are not attached
+  to these dimensions.
+- When used to update an SDMX storage system, all observations and all sets of
+  data-related reference metadata attributes at specific dimension
+  combinations affected by the Merge change their timestamp.
+
+### Replace (`R`)
+
+Data or data-related reference metadata is replaced, through either update,
+insertion or deletion depending on already existing information.
+
+- A full replacement takes place at specific "replacement levels": for entire
+  observations, and for any specific dimension combination for data-related
+  reference metadata attributes. Within these levels, provided values are
+  inserted or updated and omitted values are deleted.
+- Values provided for other attributes (above the observation level) are
+  merged (see Merge).
+- Only non-dimension components MAY be omitted. Bulk replacing is therefore
+  not supported.
+- Dimension values for higher-level (data-related reference metadata)
+  attributes MAY be switched off (`~`) when those attributes are not attached
+  to these dimensions.
+- Replacing non-existing elements MUST NOT result in an error.
+- When used to update an SDMX storage system, all observations and all sets of
+  data-related reference metadata attributes at specific dimension
+  combinations affected by the Replace change their timestamp.
+- Because Replace always takes place at specific levels, it cannot replace a
+  whole dataset or a whole series. A "replace all" effect can be achieved by
+  combining a Delete row with a completely wildcarded key (all dimension
+  values omitted) with Merge or Replace rows in the same message. Similarly, to
+  replace a whole series, combine a Delete row with only the series' partial
+  key with Merge or Replace rows for that series.
+
+### Delete (`D`)
+
+Data or data-related reference metadata is deleted, at the lowest level of
+detail provided in the message.
+
+- Any component, including dimensions, MAY be omitted. Omitting dimension
+  values allows bulk deletions.
+- Partially omitting non-dimension values restricts the deletion to the
+  measure, attribute or data-related reference metadata values that are
+  present. Instead of real values, any valid value MAY be used, e.g. `-`.
+- This allows deleting all dataflow data, slices of observations for dimension
+  groups such as time series, single observations, or individual measure,
+  attribute and data-related reference metadata values.
+- Dimension values for higher-level (data-related reference metadata)
+  attributes MAY be switched off (`~`) when those attributes are not attached
+  to these dimensions.
+- Deleting non-existing elements or values MUST NOT result in an error.
+- When used to update an SDMX storage system, all observations and all sets of
+  attributes and data-related reference metadata at higher partial keys
+  affected by the Delete change their timestamp.
+
+### Transactions
+
+All datasets within a single data message, even with varying actions, MUST be
+treated as one **ACID transaction**, guaranteeing full data consistency and
+validity despite errors, power failures and other mishaps. Datasets MUST be
+processed in their order of appearance in the message. This allows bundling
+separate Delete and Replace or Merge actions into one transactional message.
+
+### Physical storage
+
+The terms "delete", "merge" and "replace" do **not** imply a physical
+replacement or deletion of values in the underlying database.
+
+- SDMX web services that do not support the `includeHistory` and `asOf` URL
+  parameters MAY physically replace existing values, to minimise physical
+  resource requirements. Those that also do not support `updatedAfter` MAY
+  physically delete values.
+- SDMX web services that support these parameters (or other time-machine
+  features) MUST NOT overwrite or physically delete values.
+- SDMX web services that support `includeHistory` or `asOf` SHOULD NOT allow
+  deleting their **historic** data content, because this would interfere with
+  the interests of data consumers such as data aggregators. A feature to
+  physically delete outdated content is intentionally not part of the SDMX
+  standard; if required, it must be implemented as a custom feature outside
+  the standard.
+- All SDMX-compliant systems that support (or are configured to support) the
+  `updatedAfter` URL parameter MUST systematically retain information about
+  deleted data and data-related reference metadata.
+
+### Dataset actions in web service responses
+
+The following is RECOMMENDED[^bc] for responses to GET data queries:
+
+1. Without the `updatedAfter`, `includeHistory`, `detail`, `attributes` or
+   `measures` URL parameters: the retrieved data in a _Replace_ dataset
+   (instead of the previous _Information_ dataset).
+2. Without `updatedAfter` and `includeHistory`, but with `detail`,
+   `attributes` or `measures`: the retrieved data in a _Merge_ dataset
+   (instead of the previous _Information_ dataset).
+3. With `updatedAfter`: the response MUST include all previously updated,
+   inserted and deleted data or data-related reference metadata, even if bulk
+   deletions were used. Two approaches are possible:
+    - a _Delete_ dataset for entirely deleted observations and for entirely
+      deleted sets of (data-related reference metadata) attribute values
+      attached to specific dimension combinations, **and** a _Replace_ dataset
+      for all other changed observations and changed attribute and
+      data-related reference metadata values attached to specific dimension
+      combinations; or
+    - a _Delete_ dataset for entirely deleted observations, for entirely
+      deleted sets of (data-related reference metadata) attribute values
+      attached to specific dimension combinations and for individually deleted
+      measure, attribute and reference metadata values, **and** a _Merge_
+      dataset for all other updated or inserted observation, attribute and
+      data-related reference metadata values.
+
+    The database synchronisation use case requires that the response always
+    allows replicating exactly the same point-in-time data content as
+    currently stored in the queried data source.
+4. With `includeHistory`: a number of datasets with Delete, Replace or Merge
+   actions, each limited in its validity time span, that allow replicating
+   exactly the same point-in-time data contents as previously stored in the
+   queried data source.
+5. With `asOf`: recommendations 1 and 2 apply depending on the other
+   parameters. In addition, the returned dataset SHOULD have its validity time
+   span limited to the point in time requested in `asOf`.
+
+## HTTP integration
+
+### Media type
+
+Clients SHOULD request SDMX-CSV data messages with the following HTTP
+`Accept` header:
+
+`application/vnd.sdmx.data+csv; version=2.1.0`
+
+### Optional parameters
+
+Optional parameters MAY be added to the `Accept` header, separated by `"; "`.
+
+**`labels`** (`id` | `name` | `both`; default `id`): applies to all nameable
+SDMX artefacts in the header and the body of the message.
+
+- `id`: only the ID/value of artefacts is shown.
+- `name`: the ID/value and the localised name are shown in separate columns,
+  the ID/value column directly preceding its localised name column (see
+  [`STRUCTURE_NAME`](#structure_name) and
+  [Component columns](#component-columns)).
+- `both`: the ID/value and the localised name are concatenated, separated by
+  `": "` (see [Localisation](#localisation) for how languages are chosen).
+
+**`timeFormat`** (`original` | `normalized`; default `original`):
+
+- `original`: time dimension (`TIME_PERIOD`) values are shown in the SDMX
+  `TIME_PERIOD` format as originally recorded.
+- `normalized`: `TIME_PERIOD` values are converted to the most granular
+  [ISO 8601](https://www.iso.org/iso-8601-date-and-time-format.html)
+  representation, taking into account the highest frequency of the data in
+  the message and the moment in time when lower-frequency values were
+  collected (typically the beginning, middle or end of the reporting period).
+  This eases comparison and analysis of multi-frequency data, e.g. in pivot
+  tables. For example, if a message contains annual and daily data and annual
+  data were collected at the end of the period, the annual period `2014`
+  becomes `2014-12-31`.
+
+**`keys`** (`none` | `obs` | `series` | `both`; default `none`): requests the
+addition of key columns (see [`SERIES_KEY` and `OBS_KEY`](#series_key-and-obs_key)).
+
+- `none`: no key column is added.
+- `obs`: an `OBS_KEY` column is added.
+- `series`: a `SERIES_KEY` column is added.
+- `both`: both `SERIES_KEY` and `OBS_KEY` columns are added, `SERIES_KEY`
+  first.
+
+### Localisation
+
+- Clients MAY indicate preferred languages through the HTTP
+  [`Accept-Language`](https://www.rfc-editor.org/rfc/rfc9110#field.accept-language)
+  header, e.g. `fr, en-gb;q=0.8, en;q=0.7`.
+- Senders MUST localise all artefact names according to the preferred
+  language: the best language match according to the user's preferences in
+  `Accept-Language` (or, if not available, the system's default language
+  order) is used for each localisable name element. The message does not
+  indicate the language returned per name element.
+- If no language matches for a particular name element, the sender MAY return
+  it in a system-default language or MAY omit it.
+- Senders SHOULD indicate all languages used anywhere in the message for
+  localised name elements through the HTTP `Content-Language` response header.
+- Multi-lingual component values are not affected: all language versions are
+  always provided, independently of the preferred language (see
+  [Non-coded multi-lingual components](#non-coded-multi-lingual-components)).
 
 ## Examples
 
-Note: All examples assume the minimal HTTP Accept header:
-`application/vnd.sdmx.data+csv; version=2.1.0`
+Note: unless stated otherwise, all examples assume the minimal HTTP `Accept`
+header `application/vnd.sdmx.data+csv; version=2.1.0`.
 
 ??? example "Ordinary case"
 
@@ -494,28 +601,27 @@ Note: All examples assume the minimal HTTP Accept header:
 
     !!! note
 
-        - The following default parameter settings are automatically applied:
-            - `labels=id`
-            - `timeFormat=original`
-        - _UPDATED_ is a custom column
+        - The default parameter settings `labels=id` and
+          `timeFormat=original` apply.
+        - `UPDATED` is a custom column.
 
 ??? example "Components in any order, missing component(s), component with multiple values"
 
     ```csv
     STRUCTURE[;],STRUCTURE_ID,ACTION,OBS_VALUE1,OBS_VALUE2,ATTR_3,ATTR_1[],DIM_2,DIM_1,DIM_3
     dataflow,ESTAT:NA_MAIN(1.6.0),M,12.4,12.5,"Normal, special and other values",X;Y,B,A,2014-01
-    dataflow,ESTAT:NA_MAIN(1.6.0),M,10.8,10.9,"Normal, special and other values",X;Z,B,A,2014-02```
+    dataflow,ESTAT:NA_MAIN(1.6.0),M,10.8,10.9,"Normal, special and other values",X;Z,B,A,2014-02
     ```
 
-??? example "Components in any order and missing component, HTTP Accept header: `application/vnd.sdmx.data+csv; version=1.0.0; key=series`"
+??? example "Components in any order and missing component, HTTP Accept header: `application/vnd.sdmx.data+csv; version=2.1.0; keys=series`"
 
     ```csv
-    STRUCTURE[;],STRUCTURE_ID,ACTION,SERIES_KEY,OBS_VALUE1,OBS_VALUE2,ATTR_3,ATTR_1,DIM_2,DIM_1,DIM_3
+    STRUCTURE,STRUCTURE_ID,ACTION,SERIES_KEY,OBS_VALUE1,OBS_VALUE2,ATTR_3,ATTR_1,DIM_2,DIM_1,DIM_3
     dataflow,ESTAT:NA_MAIN(1.6.0),M,A.B,12.4,12.5,"Normal, special and other values",N,B,A,2014-01
     dataflow,ESTAT:NA_MAIN(1.6.0),M,A.B,10.8,10.9,"Normal, special and other values",Y,B,A,2014-02
     ```
 
-??? example "Localisation: HTTP Accept header: `application/vnd.sdmx.data+csv; version=1.0.0; labels=both; key=both`, HTTP Accept-Language header: `fr-FR, en;q=0.7`"
+??? example "Localisation: HTTP Accept header: `application/vnd.sdmx.data+csv; version=2.1.0; labels=both; keys=both`, HTTP Accept-Language header: `fr-FR, en;q=0.7`"
 
     ```csv
     STRUCTURE[|];STRUCTURE_ID;ACTION;SERIES_KEY;OBS_KEY;DIM_1: Dimension 1;DIM_2: Dimension 2;DIM_3: Dimension 3;OBS_VALUE: Observation value;ATTR_2: Attribut 2;ATTR_3: Attribut 3;ATTR_1: Attribut 1
@@ -523,24 +629,24 @@ Note: All examples assume the minimal HTTP Accept header:
     dataflow;ESTAT:NA_MAIN(1.6.0): Principaux agrégats des comptes nationaux;M;A.B;A.B.2014-02;A: Value A;B: Value B;2014-02: 2014-02;10,8;Y: Oui;Normal, special and other values;Y: Oui
     ```
 
-    Note that in this example the client prefers French (fr) language with the
-    France (FR) locale, but will also accept any type of English. Therefore, in the
-    message the French language with the France locale is applied, transforming also
-    the field separator from comma (,) to semicolon (;), and the decimal separator
-    from dot (.) to comma (,).
+    The client prefers French with the France locale (`fr-FR`), but also
+    accepts any English. The message therefore applies French with the France
+    locale, which also changes the field separator from comma (`,`) to
+    semicolon (`;`) and the decimal separator from dot (`.`) to comma (`,`).
+    The field separator is the character following `STRUCTURE[|]`.
 
-??? example "HTTP Accept header: `application/vnd.sdmx.data+csv; version=1.0.0; labels=both; timeFormat=normalized`"
+??? example "HTTP Accept header: `application/vnd.sdmx.data+csv; version=2.1.0; labels=both; timeFormat=normalized`"
 
     ```csv
-    STRUCTURE[;],STRUCTURE_ID,ACTION,DIM_1: Dimension 1,DIM_2: Dimension 2,DIM_3: Dimension 3,OBS_VALUE: Observation value,ATTR_2: Attribute 2,ATTR_3: Attribute 3,ATTR_1: Attribute 1
+    STRUCTURE,STRUCTURE_ID,ACTION,DIM_1: Dimension 1,DIM_2: Dimension 2,DIM_3: Dimension 3,OBS_VALUE: Observation value,ATTR_2: Attribute 2,ATTR_3: Attribute 3,ATTR_1: Attribute 1
     dataflow,ESTAT:NA_MAIN(1.6.0): National Accounts Main Aggregates,M,A: Value A,B: Value B,2014-01-01,12.4,Y: Yes,"Normal, special and other values",N: No
     dataflow,ESTAT:NA_MAIN(1.6.0): National Accounts Main Aggregates,M,A: Value A,B: Value B,2014-02-01,10.8,Y: Yes,"Normal, special and other values",Y: Yes
     ```
 
-??? example "HTTP Accept header: `application/vnd.sdmx.data+csv; version=1.0.0; labels=name`"
+??? example "HTTP Accept header: `application/vnd.sdmx.data+csv; version=2.1.0; labels=name`"
 
     ```csv
-    STRUCTURE,STRUCTURE_ID,STRUCTURE_NAME,ACTION,DIM_1,Dimension 1,DIM_2,Dimension 2,DIM_3,Dimension 3,OBS_VALUE,Observation value,ATTR_1,Attribute 1,ATTR_2,Attribute 2,ATTR_3,Attribute 3
+    STRUCTURE,STRUCTURE_ID,STRUCTURE_NAME,ACTION,DIM_1,Dimension 1,DIM_2,Dimension 2,DIM_3,Dimension 3,OBS_VALUE,Observation value,ATTR_2,Attribute 2,ATTR_3,Attribute 3,ATTR_1,Attribute 1
     dataflow,ESTAT:NA_MAIN(1.6.0),National Accounts Main Aggregates,M,A,Value A,B,Value B,2014-01,2014-01,12.4,,Y,Yes,"Normal, special and other values",,N,No
     dataflow,ESTAT:NA_MAIN(1.6.0),National Accounts Main Aggregates,M,A,Value A,B,Value B,2014-02,2014-02,10.8,,Y,Yes,"Normal, special and other values",,Y,Yes
     ```
@@ -561,7 +667,7 @@ Note: All examples assume the minimal HTTP Accept header:
     dataflow,ESTAT:NA_MAIN(1.7.0),M,A,B,2014-02,10.8,"en:Value ""X"";fr:Valeur ""X"""
     ```
 
-??? example "Varying structural artefacts based on same underlying data structure"
+??? example "Varying structural artefacts based on the same underlying data structure"
 
     ```csv
     STRUCTURE[;],STRUCTURE_ID,ACTION,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_1[en;fr]
@@ -573,10 +679,10 @@ Note: All examples assume the minimal HTTP Accept header:
 ??? example "Varying structural artefacts based on different underlying data structures"
 
     ```csv
-    STRUCTURE[;],STRUCTURE_ID,ACTION,DIM_A1B1,DIM_A2,DIM_A3C2,DIM_B2,DIM_C1,DIM_C3,MEAS_A1B1C1,MEAS_C2,ATTR_A1,ATTR_B1
-    dataflow,ESTAT:DF_A(1.6.0),M,DIMVAL_A1B1,DIMVAL_A2,DIMVAL_A3C2,,,,"MEASVAL_A1B1C1",,"ATTRVAL_A1",
-    datastructure,ESTAT:DSD_B(1.7.0),M,DIMVAL_A1B1,,,DIMVAL_B2,,,"MEASVAL_A1B1C1",,,"ATTRVAL_B1"
-    dataprovision,ESTAT:DPA_C(1.8.0),M,,,DIMVAL_A3C2,,DIMVAL_C1,DIMVAL_C3,"MEAS_A1B1C1","MEAS_C2",,
+    STRUCTURE,STRUCTURE_ID,ACTION,DIM_A1B1,DIM_A2,DIM_A3C2,DIM_B2,DIM_C1,DIM_C3,MEAS_A1B1C1,MEAS_C2,ATTR_A1,ATTR_B1
+    dataflow,ESTAT:DF_A(1.6.0),M,DIMVAL_A1B1,DIMVAL_A2,DIMVAL_A3C2,,,,MEASVAL_A1B1C1,,ATTRVAL_A1,
+    datastructure,ESTAT:DSD_B(1.7.0),M,DIMVAL_A1B1,,,DIMVAL_B2,,,MEASVAL_A1B1C1,,,ATTRVAL_B1
+    dataprovision,ESTAT:DPA_C(1.8.0),M,,,DIMVAL_A3C2,,DIMVAL_C1,DIMVAL_C3,MEASVAL_A1B1C1,MEASVAL_C2,,
     ```
 
 ??? example "Varying actions"
@@ -587,12 +693,12 @@ Note: All examples assume the minimal HTTP Accept header:
     dataflow,ESTAT:NA_MAIN(1.6.0),R,A,B,2014-02,10.8,Y
     ```
 
-??? example "Data for a non-versioned[^1] data structure definition"
+??? example "Data for a non-versioned data structure definition"
 
     ```csv
     STRUCTURE,STRUCTURE_ID,ACTION,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_1
-    datastructure,AGENCY:DF_ID,M,A,B,2014-01,12.4,N
-    datastructure,AGENCY:DF_ID,M,A,B,2014-02,10.8,Y
+    datastructure,AGENCY:DSD_ID,M,A,B,2014-01,12.4,N
+    datastructure,AGENCY:DSD_ID,M,A,B,2014-02,10.8,Y
     ```
 
 ??? example "Attributes attached to partial keys for a data provision agreement"
@@ -614,12 +720,15 @@ Note: All examples assume the minimal HTTP Accept header:
 ??? example "Nested metadata attributes attached to partial keys"
 
     ```csv
-    STRUCTURE,STRUCTURE_ID,ACTION,DIM_2,COLLECTION.METHOD[en;fr],CONTACT[],CONTACT[].NAME[]
-    dataflow,AGENCY:DF_ID(1.0.0),I,A,en:AAA;fr:BBB,Contact 1;Contact 2,"""Contact 1 Name 1;Contact 1 Name 2"";""Contact 1 Name 1;Contact 2 Name 2"""
-    dataflow,AGENCY:DF_ID(1.0.0),I,B,en:CCC;fr:DDD,Contact 1;Contact 2;Contact 3,"""Contact 1 Name 1;Contact 1 Name 2"";;""Contact 3 Name 1;Contact 3 Name 2"""
+    STRUCTURE[;],STRUCTURE_ID,ACTION,DIM_2,COLLECTION.METHOD[en;fr],CONTACT[],CONTACT[].NAME[]
+    dataflow,AGENCY:DF_ID(1.0.0),M,A,en:AAA;fr:BBB,Contact 1;Contact 2,"""Contact 1 Name 1;Contact 1 Name 2"";""Contact 2 Name 1;Contact 2 Name 2"""
+    dataflow,AGENCY:DF_ID(1.0.0),M,B,en:CCC;fr:DDD,Contact 1;Contact 2;Contact 3,"""Contact 1 Name 1;Contact 1 Name 2"";;""Contact 3 Name 1;Contact 3 Name 2"""
     ```
 
-??? example "Non-coded XHTML-formatted values with line-breaks"
+    In the second row, `Contact 2` has no names, indicated by the empty
+    sub-field.
+
+??? example "Non-coded XHTML-formatted values with line breaks"
 
     ```csv
     STRUCTURE,STRUCTURE_ID,ACTION,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_1
@@ -628,7 +737,7 @@ Note: All examples assume the minimal HTTP Accept header:
     dataflow,ESTAT:NA_MAIN(1.6.0),M,A,B,2014-02,10.8,"<p>This is some other ""xhtml""</p>"
     ```
 
-??? example "Deleting specific measure and attribute values: all non-empty values (e.g. marked with '-') are deleted"
+??? example "Deleting specific measure and attribute values: all non-empty values (e.g. marked with `-`) are deleted"
 
     ```csv
     STRUCTURE,STRUCTURE_ID,ACTION,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_2,ATTR_3,ATTR_1
@@ -636,26 +745,31 @@ Note: All examples assume the minimal HTTP Accept header:
     dataflow,ESTAT:NA_MAIN(1.6.0),D,A,B,2014-02,,,-,
     ```
 
-??? example "Deleting specific measure and attribute values with wildcarded dimensions: all non-empty values (e.g. marked with "-") are deleted for all dimension combinations where"
+??? example "Deleting specific measure and attribute values with wildcarded dimensions"
 
-    - row 2: DIM2=A
-    - row 3: DIM2=B
+    All non-empty values (e.g. marked with `-`) are deleted for all dimension
+    combinations where:
+
+    - row 1: `DIM_2=A`
+    - row 2: `DIM_2=B`
 
     ```csv
-     STRUCTURE,STRUCTURE_ID,ACTION,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_2,ATTR_3,ATTR_1
-     dataflow,ESTAT:NA_MAIN(1.6.0),D,,A,,-,,,
-     dataflow,ESTAT:NA_MAIN(1.6.0),D,,B,,,,-,
+    STRUCTURE,STRUCTURE_ID,ACTION,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_2,ATTR_3,ATTR_1
+    dataflow,ESTAT:NA_MAIN(1.6.0),D,,A,,-,,,
+    dataflow,ESTAT:NA_MAIN(1.6.0),D,,B,,,,-,
     ```
 
-??? example "Deleting whole observations with wildcarded dimensions: all observations are deleted for all dimension combinations where"
+??? example "Deleting whole observations with wildcarded dimensions"
 
-    - row 2: DIM2=A
-    - row 3: DIM2=B and DIM3=C
+    All observations are deleted for all dimension combinations where:
+
+    - row 1: `DIM_2=A`
+    - row 2: `DIM_2=B` and `DIM_3=C`
 
     ```csv
-     STRUCTURE,STRUCTURE_ID,ACTION,DIM_2,DIM_3
-     dataflow,ESTAT:NA_MAIN(1.6.0),D,A,,
-     dataflow,ESTAT:NA_MAIN(1.6.0),D,B,C,
+    STRUCTURE,STRUCTURE_ID,ACTION,DIM_2,DIM_3
+    dataflow,ESTAT:NA_MAIN(1.6.0),D,A,
+    dataflow,ESTAT:NA_MAIN(1.6.0),D,B,C
     ```
 
 ??? example "Deleting all data for a data structure definition"
@@ -674,7 +788,11 @@ Note: All examples assume the minimal HTTP Accept header:
 
 ---
 
-[^1]:
-    Note that since SDMX 3.0.0 the syntax _AGENCY:ARTEFACT_ID(VERSION)_
-    allows omitting the version for non-versioned artefacts. In this case using
-    _AGENCY:ARTEFACT_ID_ is sufficient, e.g. `AGENCY:DF_ID`
+[^nv]:
+    Since SDMX 3.0.0, the syntax _AGENCY:ARTEFACT_ID(VERSION)_ allows
+    omitting the version for non-versioned artefacts. In this case
+    _AGENCY:ARTEFACT_ID_ is sufficient, e.g. `AGENCY:DF_ID`.
+
+[^bc]:
+    So far this is recommended for systems that do not require backward
+    compatibility. With SDMX 4.0 this may become mandatory.
