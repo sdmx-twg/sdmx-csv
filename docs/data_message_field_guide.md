@@ -80,15 +80,13 @@ dataflow,ESTAT:NA_MAIN(1.6.0),M,A,B,2014-01,12.4,N
 | [`EXAMPLE`](#component-columns) | Component ID (dimension, measure, attribute, incl. metadata attributes). | After the fixed columns |
 | [`EXAMPLE: Name`](#component-columns) | ID and localised name in one header. Only with `labels=both`. | Replaces `EXAMPLE` |
 | [`Name`](#component-columns) | Additional column with localised names. Only with `labels=name`. | Directly after its component column |
-| [`EXAMPLE[]`](#multi-valued-components) | Multi-valued component. | — |
-| [`EXAMPLE[en;fr]`](#non-coded-multi-lingual-components) | Non-coded multi-lingual component (also used for multi-lingual multi-valued components). | — |
-| [`PARENT.CHILD`](#nested-metadata-attributes) | Nested metadata attribute. | — |
-| [`PARENT[].CHILD[]`](#nested-metadata-attributes) | Nested metadata attribute of a multi-valued parent attribute. | — |
+| [`PARENT.CHILD`](#nested-metadata-attributes) | Nested metadata attribute: the attribute ID prefixed with the IDs of its parent attribute(s). | — |
 | **Other columns** | | |
 | [`UPDATED`](#custom-columns) (any custom term) | Implementer-defined column. | Not specified |
 
-Header suffixes combine: e.g. `COLLECTION.METHOD[en;fr]` is a nested,
-multi-lingual metadata attribute.
+Multi-valued and multi-lingual components have no specific header syntax: the
+header is the plain component ID, and the type of the component is defined by
+the data structure definition (see [Component values](#component-values)).
 
 ## Separators
 
@@ -214,12 +212,6 @@ parameter, directly after `ACTION` (or after the structure identification if
 - `OBS_KEY`: the IDs/values of all dimensions, in data structure order,
   separated by a dot `.`, e.g. `M.USD.EUR.SP00.2020-01`.
 
-!!! warning "Open point"
-
-    Earlier versions of this guide used both `key=` and `keys=` for this
-    parameter. This version uses `keys` throughout, as defined in
-    [Optional parameters](#optional-parameters). To be confirmed by the TWG.
-
 ### Component columns
 
 Each data structure component included in the message (dimensions, measures,
@@ -247,9 +239,9 @@ with `labels=name`.
 | `both` | Component ID and localised name separated by `": "` | `DIM_1: Dimension 1` |
 | `name` | Component ID, followed by an additional column whose header is the localised name | `DIM_1`, `Dimension 1` |
 
-The component ID MAY be followed by a suffix indicating a multi-valued
-(`[]`), multi-lingual (`[en;fr]`) or nested (`PARENT.CHILD`) component; see
-[Component values](#component-values).
+The header contains only the component ID, or for nested metadata attributes
+the dotted ID path (`PARENT.CHILD`). No suffix indicates whether a component
+is multi-valued or multi-lingual; see [Component values](#component-values).
 
 **Content:**
 
@@ -271,10 +263,15 @@ Senders MAY add any other custom columns, e.g. `UPDATED` or `PREPARED`.
 
 ## Component values
 
+Whether a component is multi-valued and/or multi-lingual is defined only by
+the data structure definition; column headers carry no indication of it.
+Receivers MUST use the data structure definition to interpret the content of
+such columns, e.g. to know whether the sub-field separator splits the field
+into several values.
+
 ### Multi-valued components
 
-- **Header:** the component ID followed by empty square brackets, e.g.
-  `ATTR_1[]`.
+- **Header:** the plain component ID, e.g. `ATTR_1`.
 - **Content:** the values separated by the sub-field separator, e.g. `X;Y`.
 - With `labels=both`, each coded value is prefixed with its ID and `": "`, e.g.
   `A: Value A;B: Value B`.
@@ -282,11 +279,9 @@ Senders MAY add any other custom columns, e.g. `UPDATED` or `PREPARED`.
 
 ### Non-coded multi-lingual components
 
-- **Header:** the component ID followed by the list of possible ISO 639-1
-  language codes, separated by the sub-field separator and enclosed in square
-  brackets, e.g. `ATTR_2[en;fr]`.
-- **Content:** each language value prefixed with its language code and a colon
-  `:`, the values separated by the sub-field separator, e.g.
+- **Header:** the plain component ID, e.g. `ATTR_2`.
+- **Content:** each language value prefixed with its ISO 639-1 language code
+  and a colon `:`, the values separated by the sub-field separator, e.g.
   `en:Value;fr:Valeur`. Unlike the ID prefix used with `labels=both`, there is
   no space after the colon.
 - Multi-lingual components are always non-coded, so the language prefix cannot
@@ -295,42 +290,29 @@ Senders MAY add any other custom columns, e.g. `UPDATED` or `PREPARED`.
 
 ### Non-coded multi-lingual multi-valued components
 
-- **Header:** the same as for multi-lingual components, e.g.
-  `ATTR_2[en;fr;de]`.
+- **Header:** the plain component ID, e.g. `ATTR_2`.
 - **Content:** each multi-lingual value set enclosed in double quotes, the sets
   separated by the sub-field separator, e.g.
   `"en:Value1;fr:Valeur1";"en:Value2;de:Wert2"`. Since the field itself
   contains double quotes, it MUST be enclosed in double quotes and the inner
   quotes MUST be doubled:
   `"""en:Value1;fr:Valeur1"";""en:Value2;de:Wert2"""`.
-
-!!! warning "Open point"
-
-    The header syntax is identical for multi-lingual and multi-lingual
-    multi-valued components, so a receiver can only tell them apart from the
-    data structure definition. The TWG should decide whether a distinct header
-    syntax is needed.
+- Requires the sub-field separator to be declared (`STRUCTURE[x]`).
 
 ### Nested metadata attributes
 
 - Each metadata attribute is presented in its own column(s), even when nested.
 - **Header:** the attribute ID prefixed with the IDs of its parent
-  attribute(s), separated by a dot `.`, e.g. `COLLECTION.METHOD`. When the
-  parent is multi-valued, e.g. `CONTACT[].NAME[]`.
-- **Content:** all values of the attribute, presented like a multi-valued
-  component and respecting their position in the attribute tree, e.g.
-  `name for contact 1;name for contact 2`.
+  attribute(s), separated by a dot `.`, e.g. `COLLECTION.METHOD` or
+  `CONTACT.NAME`, whether or not the parent or child is multi-valued.
+- **Content:** when the parent is multi-valued, all values of the attribute,
+  presented like a multi-valued component and respecting their position in
+  the attribute tree, e.g. `name for contact 1;name for contact 2`.
 - A parent branch without a value for the attribute is indicated by an empty
   sub-field, e.g. `name for contact 1;;name for contact 3`.
 - Nested parent branches are indicated by nested double quotes, with inner
   quotes doubled recursively, e.g.
   `"""name 1 for contact 1;name 2 for contact 1"";""name 1 for contact 2;name 2 for contact 2"""`.
-
-!!! warning "Open point"
-
-    The only example uses `CONTACT[].NAME[]`, where the child also carries
-    `[]`. To be confirmed whether the child's `[]` is required or only
-    present because the child is itself multi-valued.
 
 ### Non-coded XHTML values
 
@@ -533,6 +515,8 @@ Clients SHOULD request SDMX-CSV data messages with the following HTTP
 ### Optional parameters
 
 Optional parameters MAY be added to the `Accept` header, separated by `"; "`.
+The parameters and their values are those defined for SDMX-CSV in the
+[SDMX REST API data queries](https://github.com/sdmx-twg/sdmx-rest/blob/master/doc/data.md).
 
 **`labels`** (`id` | `name` | `both`; default `id`): applies to all nameable
 SDMX artefacts in the header and the body of the message.
@@ -608,7 +592,7 @@ header `application/vnd.sdmx.data+csv; version=2.1.0`.
 ??? example "Components in any order, missing component(s), component with multiple values"
 
     ```csv
-    STRUCTURE[;],STRUCTURE_ID,ACTION,OBS_VALUE1,OBS_VALUE2,ATTR_3,ATTR_1[],DIM_2,DIM_1,DIM_3
+    STRUCTURE[;],STRUCTURE_ID,ACTION,OBS_VALUE1,OBS_VALUE2,ATTR_3,ATTR_1,DIM_2,DIM_1,DIM_3
     dataflow,ESTAT:NA_MAIN(1.6.0),M,12.4,12.5,"Normal, special and other values",X;Y,B,A,2014-01
     dataflow,ESTAT:NA_MAIN(1.6.0),M,10.8,10.9,"Normal, special and other values",X;Z,B,A,2014-02
     ```
@@ -654,7 +638,7 @@ header `application/vnd.sdmx.data+csv; version=2.1.0`.
 ??? example "Multi-valued components"
 
     ```csv
-    STRUCTURE[;],STRUCTURE_ID,ACTION,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_1[],ATTR_2[],ATTR_3[]
+    STRUCTURE[;],STRUCTURE_ID,ACTION,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_1,ATTR_2,ATTR_3
     dataflow,ESTAT:NA_MAIN(1.6.0),M,A,B,2014-01,12.4,Value X;Value Y,"M, N & O;P & Q",A;B;C
     dataflow,ESTAT:NA_MAIN(1.6.0),M,A,B,2014-02,10.8,Value X;Value Y,"M, N & O;P & Q",A;C
     ```
@@ -662,7 +646,7 @@ header `application/vnd.sdmx.data+csv; version=2.1.0`.
 ??? example "Non-coded multi-lingual components, varying dataflows based on the same underlying data structure"
 
     ```csv
-    STRUCTURE[;],STRUCTURE_ID,ACTION,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_1[en;fr]
+    STRUCTURE[;],STRUCTURE_ID,ACTION,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_1
     dataflow,ESTAT:NA_MAIN(1.6.0),M,A,B,2014-01,12.4,en:Any Value;fr:N'importe quelle Valeur
     dataflow,ESTAT:NA_MAIN(1.7.0),M,A,B,2014-02,10.8,"en:Value ""X"";fr:Valeur ""X"""
     ```
@@ -670,7 +654,7 @@ header `application/vnd.sdmx.data+csv; version=2.1.0`.
 ??? example "Varying structural artefacts based on the same underlying data structure"
 
     ```csv
-    STRUCTURE[;],STRUCTURE_ID,ACTION,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_1[en;fr]
+    STRUCTURE[;],STRUCTURE_ID,ACTION,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_1
     dataflow,ESTAT:DF_NA_MAIN(1.6.0),M,A,B,2014-01,12.4,en:Any Value;fr:N'importe quelle Valeur
     datastructure,ESTAT:DSD_NA_MAIN(1.7.0),M,A,B,2014-02,10.8,"en:Value ""X"";fr:Valeur ""X"""
     dataprovision,ESTAT:DPA_NA_MAIN(1.8.0),M,A,B,2014-03,11.2,"en:Value ""Y"";fr:Valeur ""Y"""
@@ -720,7 +704,7 @@ header `application/vnd.sdmx.data+csv; version=2.1.0`.
 ??? example "Nested metadata attributes attached to partial keys"
 
     ```csv
-    STRUCTURE[;],STRUCTURE_ID,ACTION,DIM_2,COLLECTION.METHOD[en;fr],CONTACT[],CONTACT[].NAME[]
+    STRUCTURE[;],STRUCTURE_ID,ACTION,DIM_2,COLLECTION.METHOD,CONTACT,CONTACT.NAME
     dataflow,AGENCY:DF_ID(1.0.0),M,A,en:AAA;fr:BBB,Contact 1;Contact 2,"""Contact 1 Name 1;Contact 1 Name 2"";""Contact 2 Name 1;Contact 2 Name 2"""
     dataflow,AGENCY:DF_ID(1.0.0),M,B,en:CCC;fr:DDD,Contact 1;Contact 2;Contact 3,"""Contact 1 Name 1;Contact 1 Name 2"";;""Contact 3 Name 1;Contact 3 Name 2"""
     ```
