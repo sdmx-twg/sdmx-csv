@@ -78,15 +78,13 @@ metadataflow,OECD:MDF(1.0.0),OECD:MDS(1.0.0),dataflow,OECD:DF(1.0.0),Statistics 
 | [`PARENT.CHILD`](#nested-metadata-attributes) | Nested metadata attribute, prefixed with the IDs of all its parent attributes. | — |
 | [`ATTR: Name`](#metadata-attribute-columns) | ID and localised name in one header. Only with `labels=both`. | Replaces `ATTR` |
 | [`Name`](#metadata-attribute-columns) | Additional column with localised names. Only with `labels=name`. | Directly after its metadata attribute column |
-| [`ATTR[]`](#multi-instance-metadata-attributes) | Multi-instance metadata attribute. | — |
-| [`ATTR[en;fr]`](#non-coded-multi-lingual-metadata-attributes) | Non-coded multi-lingual metadata attribute. | — |
-| [`ATTR[][en;fr]`](#non-coded-multi-lingual-multi-instance-metadata-attributes) | Non-coded multi-lingual multi-instance metadata attribute. | — |
 | **Other columns** | | |
 | [`publicationPeriod`](#custom-columns) (any custom term) | Implementer-defined column. | Not specified |
 
-Header suffixes combine: e.g. `CONTACT[].PHONE[]` is a multi-instance child of
-a multi-instance parent, and `PROCESS.STEP[][en;fr]` is a nested,
-multi-instance, multi-lingual metadata attribute.
+Multi-instance and multi-lingual metadata attributes have no specific header
+syntax: the header is the plain (dotted) ID, and the type of the metadata
+attribute is defined by the metadata structure definition (see
+[Metadata attribute values](#metadata-attribute-values)).
 
 ## Separators
 
@@ -281,16 +279,15 @@ columns not related to the row's metadata structure MUST be left empty.
 The full ID of a metadata attribute is its own ID prefixed by the IDs of all
 its parent metadata attributes, separated by a dot `.`, in the form
 _METADATA_ID[.METADATA_ID]+_, e.g.
-`ATTRIBUTE_GRANDPARENT_ID.ATTRIBUTE_PARENT_ID.ATTRIBUTE_CHILD_ID`. Each ID in
-this path MAY carry a suffix indicating a multi-instance (`[]`) or
-multi-lingual (`[en;fr]`) metadata attribute; see
-[Metadata attribute values](#metadata-attribute-values).
+`ATTRIBUTE_GRANDPARENT_ID.ATTRIBUTE_PARENT_ID.ATTRIBUTE_CHILD_ID`. No suffix
+indicates whether a metadata attribute is multi-instance or multi-lingual;
+see [Metadata attribute values](#metadata-attribute-values).
 
 | `labels` | Header | Example |
 | --- | --- | --- |
-| `id` (default) | Full ID | `CONTACT[].NAME` |
-| `both` | Full ID and localised name separated by `": "` | `CONTACT[].NAME: Contact name` |
-| `name` | Full ID, followed by an additional column whose header is the localised name | `CONTACT[].NAME`, `Contact name` |
+| `id` (default) | Full ID | `CONTACT.NAME` |
+| `both` | Full ID and localised name separated by `": "` | `CONTACT.NAME: Contact name` |
+| `name` | Full ID, followed by an additional column whose header is the localised name | `CONTACT.NAME`, `Contact name` |
 
 **Content:**
 
@@ -327,10 +324,15 @@ Senders MAY add any other custom columns, e.g. `publicationPeriod`,
     metadata guide, and the examples do not follow it. To be decided whether it
     is kept, and if so, whether it also applies to data messages.
 
+Whether a metadata attribute is multi-instance and/or multi-lingual is defined
+only by the metadata structure definition; column headers carry no indication
+of it. Receivers MUST use the metadata structure definition to interpret the
+content of such columns, e.g. to know whether the sub-field separator splits
+the field into several values.
+
 ### Multi-instance metadata attributes
 
-- **Header:** the metadata attribute ID followed by empty square brackets,
-  e.g. `ATTR[]`.
+- **Header:** the plain (dotted) metadata attribute ID, e.g. `ATTR`.
 - **Content:** the values of all instances of the metadata attribute within
   the metadataset, separated by the sub-field separator, e.g. `A;B`.
 - With `labels=both`, each coded value is prefixed with its ID and `": "`, e.g.
@@ -339,20 +341,16 @@ Senders MAY add any other custom columns, e.g. `publicationPeriod`,
 
 ### Non-coded multi-lingual metadata attributes
 
-- **Header:** the metadata attribute ID followed by the list of possible
-  ISO 639-1 language codes, separated by the sub-field separator and enclosed
-  in square brackets, e.g. `ATTR[en;fr]`.
-- **Content:** each language value prefixed with its language code and a colon
-  `:`, the values separated by the sub-field separator, e.g.
+- **Header:** the plain (dotted) metadata attribute ID, e.g. `ATTR`.
+- **Content:** each language value prefixed with its ISO 639-1 language code
+  and a colon `:`, the values separated by the sub-field separator, e.g.
   `en:Value;fr:Valeur`. Unlike the ID prefix used with `labels=both`, there is
   no space after the colon.
 - Requires the sub-field separator to be declared (`MDSTRUCTURE[x]`).
 
 ### Non-coded multi-lingual multi-instance metadata attributes
 
-- **Header:** the metadata attribute ID followed by empty square brackets and
-  by the list of possible language codes in a second pair of square brackets,
-  e.g. `ATTR[][en;fr;de]`.
+- **Header:** the plain (dotted) metadata attribute ID, e.g. `ATTR`.
 - **Content:** all values of all instances, each language value prefixed with
   its language code and a colon, e.g. `en:Value1`.
 - Not every instance needs all language versions. To show which language
@@ -367,18 +365,15 @@ Senders MAY add any other custom columns, e.g. `publicationPeriod`,
 ### Nested metadata attributes
 
 - Each metadata attribute is presented in its own column, even when nested.
-- **Header:** the full ID path, e.g. `CONTACT.NAME`.
-- Square brackets are added to each ID in the path that has multiple
-  instances, e.g. `CONTACT[].NAME` (multi-instance parent),
-  `CONTACT.PHONE[]` (multi-instance child) or `CONTACT[].PHONE[]` (both).
-- Language suffixes apply to the ID they follow, e.g. `PROCESS.STEP[en;fr]`,
-  or `PROCESS.STEP[][en;fr]` for multiple instances.
+- **Header:** the full ID path, e.g. `CONTACT.NAME` or `PROCESS.STEP`,
+  whether or not any attribute in the path is multi-instance or
+  multi-lingual.
 
 !!! warning "Open point"
 
     The guide does not describe how the values of a child of a multi-instance
-    parent are arranged, e.g. how the values in `CONTACT[].NAME` map to the
-    `CONTACT` instances. The data message guide specifies positional values,
+    parent are arranged, e.g. how the values in `CONTACT.NAME` map to the
+    `CONTACT` instances when `CONTACT` is multi-instance. The data message guide specifies positional values,
     with an empty sub-field for a parent instance without a value
     (`a;;c`) and nested double quotes for deeper levels. Proposal: adopt the
     same rule here.
@@ -413,6 +408,9 @@ Clients SHOULD request SDMX-CSV metadata messages with the following HTTP
 `Accept` header:
 
 `application/vnd.sdmx.metadata+csv; version=2.1.0`
+
+This media type is listed among the response types of the
+[SDMX REST API reference metadata queries](https://github.com/sdmx-twg/sdmx-rest/blob/master/doc/metadata.md).
 
 ### Optional parameters
 
@@ -467,7 +465,7 @@ header `application/vnd.sdmx.metadata+csv; version=2.1.0`.
 ??? example "Metadata attribute with multiple instances and multi-lingual values"
 
     ```csv
-    MDSTRUCTURE[;],MDSTRUCTURE_ID,METADATASET_ID,TARGET_TYPES,TARGET_IDS,ATTRIBUTE_1,ATTRIBUTE_1.ATTRIBUTE_1_2[][en;fr],ATTRIBUTE_2[],ATTRIBUTE_3[]
+    MDSTRUCTURE[;],MDSTRUCTURE_ID,METADATASET_ID,TARGET_TYPES,TARGET_IDS,ATTRIBUTE_1,ATTRIBUTE_1.ATTRIBUTE_1_2,ATTRIBUTE_2,ATTRIBUTE_3
     metadataflow,OECD:MDF(1.0.0),OECD:MDS(1.0.0),dataflow,OECD:DF(1.0.0),CODE_ID,"""en:""""<p>An XHTML text</p>"""";fr:""""<p>Un texte XHTML</p>"""""";""en:""""<p>Another XHTML text</p>"""";fr:""""<p>Un autre texte XHTML</p>""""""","""Text with """"quotes"""""";""Another text""",123;456
     ```
 
@@ -477,7 +475,7 @@ header `application/vnd.sdmx.metadata+csv; version=2.1.0`.
     multi-lingual values.
 
     ```csv
-    MDSTRUCTURE[|];MDSTRUCTURE_ID;METADATASET_ID;TARGET_TYPES;TARGET_IDS;ATTRIBUTE_1: Attribut d'exemple 1;ATTRIBUTE_1.ATTRIBUTE_1_2[][en|fr]: Attribut d'exemple 12;ATTRIBUTE_2[]: Attribut d'exemple 2
+    MDSTRUCTURE[|];MDSTRUCTURE_ID;METADATASET_ID;TARGET_TYPES;TARGET_IDS;ATTRIBUTE_1: Attribut d'exemple 1;ATTRIBUTE_1.ATTRIBUTE_1_2: Attribut d'exemple 12;ATTRIBUTE_2: Attribut d'exemple 2
     metadataflow;OECD:MDF(1.0.0): Metadataflow d'exemple;OECD:MDS(1.0.0): Metadataset d'exemple;dataflow;OECD:DF(1.0.0): Dataflow d'exemple;CODE_ID: Nom du code;"""en:""""<p>An XHTML text</p>""""|fr:""""<p>Un texte XHTML</p>""""""|""en:""""<p>Another XHTML text</p>""""|fr:""""<p>Un autre texte XHTML</p>""""""";123,45|6,789
     ```
 
@@ -493,7 +491,7 @@ header `application/vnd.sdmx.metadata+csv; version=2.1.0`.
     multi-lingual values, different targets and metadatasets.
 
     ```csv
-    MDSTRUCTURE[;],MDSTRUCTURE_ID,MDSTRUCTURE_NAME,METADATASET_ID,METADATASET_NAME,TARGET_TYPES,TARGET_IDS,TARGET_NAMES,ATTRIBUTE_1,Attribute 1,ATTRIBUTE_1.ATTRIBUTE_1_2[][en;fr],Attribute 12,ATTRIBUTE_2[],Attribute 2
+    MDSTRUCTURE[;],MDSTRUCTURE_ID,MDSTRUCTURE_NAME,METADATASET_ID,METADATASET_NAME,TARGET_TYPES,TARGET_IDS,TARGET_NAMES,ATTRIBUTE_1,Attribute 1,ATTRIBUTE_1.ATTRIBUTE_1_2,Attribute 12,ATTRIBUTE_2,Attribute 2
     metadataflow,OECD:MDF(1.0.0),Metadataflow name,OECD:MDS(1.0.0),Metadataset name,dataflow;dataflow,OECD:DF(1.0.0);OECD:DF(1.1.0),Dataflow name 1;Dataflow name 2,CODE_ID,Code name,"""en:""""<p>An XHTML text</p>"""";fr:""""<p>Un texte XHTML</p>"""""";""en:""""<p>Another XHTML text</p>"""";fr:""""<p>Un autre texte XHTML</p>""""""",,123.45;6.789,
     metadataflow,OECD:MDF(1.0.0),Metadataflow name,OECD:MDS(1.1.0),Metadataset new name,codelist,OECD:CL(1.0.0),Codelist name,CODE_ID,Code name,"""en:""""<p>Text 1</p>"""";fr:""""<p>Texte 1</p>"""""";""en:""""<p>Text 2</p>"""";fr:""""<p>Texte 2</p>""""""",,0,
     ```
@@ -504,7 +502,7 @@ header `application/vnd.sdmx.metadata+csv; version=2.1.0`.
 ??? example "Varying metadataflows"
 
     ```csv
-    MDSTRUCTURE[;],MDSTRUCTURE_ID,METADATASET_ID,TARGET_TYPES,TARGET_IDS,ATTRIBUTE_1,ATTRIBUTE_2[][en;fr;de]
+    MDSTRUCTURE[;],MDSTRUCTURE_ID,METADATASET_ID,TARGET_TYPES,TARGET_IDS,ATTRIBUTE_1,ATTRIBUTE_2
     metadataflow,OECD:MDF(1.0.0),OECD:MDS(1.0.0),dataflow,OECD:DF(1.0.0),CODE_ID,"""en:Value1;fr:Valeur1"";""en:Value2;de:Wert2"""
     metadataflow,OECD:MDF(1.1.0),OECD:MDS(1.1.0),dataflow,OECD:DF(1.1.0),CODE_ID,"""en:Value1;fr:Valeur1"";""en:Value2;de:Wert2"""
     ```
@@ -512,14 +510,14 @@ header `application/vnd.sdmx.metadata+csv; version=2.1.0`.
 ??? example "Non-versioned metadataset for a non-versioned metadata provision agreement"
 
     ```csv
-    MDSTRUCTURE[;],MDSTRUCTURE_ID,METADATASET_ID,TARGET_TYPES,TARGET_IDS,ATTRIBUTE_1,ATTRIBUTE_2[en;fr]
+    MDSTRUCTURE[;],MDSTRUCTURE_ID,METADATASET_ID,TARGET_TYPES,TARGET_IDS,ATTRIBUTE_1,ATTRIBUTE_2
     metadataprovision,OECD:MDP,OECD:MDS,dataflow,OECD:DF(1.0.0),CODE_ID,"en:Value1;fr:Valeur1"
     ```
 
 ??? example "Non-coded metadata attribute values with line breaks"
 
     ```csv
-    MDSTRUCTURE[;],MDSTRUCTURE_ID,METADATASET_ID,TARGET_TYPES,TARGET_IDS,ATTRIBUTE_1[]
+    MDSTRUCTURE[;],MDSTRUCTURE_ID,METADATASET_ID,TARGET_TYPES,TARGET_IDS,ATTRIBUTE_1
     metadataflow,OECD:MDF(1.0.0),OECD:MDS(1.0.0),dataflow,OECD:DF(1.0.0),"""This text with a line
     break"";""This is some other text"""
     ```
@@ -527,7 +525,7 @@ header `application/vnd.sdmx.metadata+csv; version=2.1.0`.
 ??? example "Metadatasets with partial languages"
 
     ```csv
-    MDSTRUCTURE[;],MDSTRUCTURE_ID,METADATASET_ID,IS_PARTIAL_LANGUAGE,TARGET_TYPES,TARGET_IDS,ATTRIBUTE_1,ATTRIBUTE_2[][en]
+    MDSTRUCTURE[;],MDSTRUCTURE_ID,METADATASET_ID,IS_PARTIAL_LANGUAGE,TARGET_TYPES,TARGET_IDS,ATTRIBUTE_1,ATTRIBUTE_2
     metadataflow,OECD:MDF(1.0.0),OECD:MDS(1.0.0),1,dataflow,OECD:DF(1.0.0),CODE_ID,"""en:Value1"";""en:Value2"""
     metadataflow,OECD:MDF(1.1.0),OECD:MDS(1.1.0),1,dataflow,OECD:DF(1.1.0),CODE_ID,"""en:Value1"";""en:Value2"""
     ```
