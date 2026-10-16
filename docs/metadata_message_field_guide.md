@@ -201,7 +201,7 @@ metadataset. It is deprecated:
 - If it is present, receivers MUST ignore it.
 - To add, replace or delete metadatasets, use the appropriate HTTP method when
   submitting the message to an SDMX REST API, as documented in
-  [Maintaining reference metadata](https://github.com/sdmx-twg/sdmx-rest/blob/complement-maintenance-doc/doc/maintenance.md#maintaining-reference-metadata).
+  [Maintaining reference metadata]([https://github.com/sdmx-twg/sdmx-rest/blob/complement-maintenance-doc/doc/maintenance.md#maintaining-reference-metadata](https://github.com/sdmx-twg/sdmx-rest/blob/master/doc/maintenance.md)).
 
 !!! warning "Open point"
 
@@ -227,12 +227,6 @@ results from an SDMX REST GET query with an `Accept-Language` header. When a
 metadataset marked `1` is submitted to an SDMX REST web service, the receiver
 MUST only add or update the included languages and MUST NOT change the other
 languages.
-
-!!! warning "Open point"
-
-    The guide does not state the effect of `0` on languages that exist in the
-    target system but are absent from the submitted metadataset (e.g. whether
-    they are deleted). To be clarified.
 
 ### `TARGET_TYPES`
 
@@ -318,12 +312,6 @@ Senders MAY add any other custom columns, e.g. `publicationPeriod`,
 - All string and textual values (the complete field, including IDs or language
   codes) SHOULD be enclosed in double quotes, even when not required.
 
-!!! warning "Open point"
-
-    The recommendation to always quote textual values exists only in the
-    metadata guide, and the examples do not follow it. To be decided whether it
-    is kept, and if so, whether it also applies to data messages.
-
 Whether a metadata attribute is multi-instance and/or multi-lingual is defined
 only by the metadata structure definition; column headers carry no indication
 of it. Receivers MUST use the metadata structure definition to interpret the
@@ -369,15 +357,6 @@ the field into several values.
   whether or not any attribute in the path is multi-instance or
   multi-lingual.
 
-!!! warning "Open point"
-
-    The guide does not describe how the values of a child of a multi-instance
-    parent are arranged, e.g. how the values in `CONTACT.NAME` map to the
-    `CONTACT` instances when `CONTACT` is multi-instance. The data message guide specifies positional values,
-    with an empty sub-field for a parent instance without a value
-    (`a;;c`) and nested double quotes for deeper levels. Proposal: adopt the
-    same rule here.
-
 ### Non-coded XHTML values
 
 - Some non-coded metadata attributes allow XHTML values.
@@ -391,14 +370,6 @@ the field into several values.
 - Each row contains one metadataset, attached to one or more targets.
 - A message MAY contain several metadatasets, for one or more metadataflows or
   metadata provision agreements, and based on one or more metadata structures.
-
-!!! warning "Open point"
-
-    The previous text stated that "in the context of appending or deleting
-    metadata, certain columns may be omitted, see below", but no such rules
-    followed. Since `ACTION` is deprecated in favour of HTTP methods, this
-    statement has been removed. To be confirmed whether any column may be
-    omitted in maintenance requests.
 
 ## HTTP integration
 
