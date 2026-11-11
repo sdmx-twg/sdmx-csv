@@ -654,8 +654,8 @@ Note: All examples assume the minimal HTTP Accept header:
 
     ```csv
      STRUCTURE,STRUCTURE_ID,ACTION,DIM_2,DIM_3
-     dataflow,ESTAT:NA_MAIN(1.6.0),D,A,,
-     dataflow,ESTAT:NA_MAIN(1.6.0),D,B,C,
+     dataflow,ESTAT:NA_MAIN(1.6.0),D,A,
+     dataflow,ESTAT:NA_MAIN(1.6.0),D,B,C
     ```
 
 ??? example "Deleting all data for a data structure definition"
