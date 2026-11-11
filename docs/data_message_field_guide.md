@@ -74,7 +74,9 @@ dataflow,ESTAT:NA_MAIN(1.6.0),M,A,B,2014-01,12.4,N
 | [`STRUCTURE_ID`](#structure_id) | Artefact identification `AGENCY:ID(VERSION)`. | 2 |
 | [`STRUCTURE_NAME`](#structure_name) | Localised name of the artefact. Only with `labels=name`. | 3 (optional) |
 | [`ACTION`](#action) | Action code: `M` Merge, `R` Replace, `D` Delete (`I` and `A` deprecated). | Directly after the structure identification (optional) |
-| [`SERIES_KEY`](#series_key-and-obs_key) | Series key. Only with `keys=series` or `keys=both`. | Directly after `ACTION` (optional) |
+| [`VALID_FROM`](#valid_from-and-valid_to) | Inclusive start of the validity time span of the row's dataset. REQUIRED with `includeHistory`. | Directly after `ACTION` (optional) |
+| [`VALID_TO`](#valid_from-and-valid_to) | Inclusive end of the validity time span of the row's dataset. REQUIRED with `includeHistory`. | Directly after `VALID_FROM` (optional) |
+| [`SERIES_KEY`](#series_key-and-obs_key) | Series key. Only with `keys=series` or `keys=both`. | Directly after `ACTION` and the validity columns, if present (optional) |
 | [`OBS_KEY`](#series_key-and-obs_key) | Observation key. Only with `keys=obs` or `keys=both`. | Directly after `SERIES_KEY` if present (optional) |
 | **Component columns** | | |
 | [`EXAMPLE`](#component-columns) | Component ID (dimension, measure, attribute, incl. metadata attributes). | After the fixed columns |
@@ -117,12 +119,14 @@ the data structure definition (see [Component values](#component-values)).
 2. `STRUCTURE_ID`
 3. `STRUCTURE_NAME` (only with `labels=name`)
 4. `ACTION` (optional)
-5. `SERIES_KEY` and/or `OBS_KEY`, in this order (only with the `keys`
+5. `VALID_FROM` and `VALID_TO`, in this order (optional, see
+   [`VALID_FROM` and `VALID_TO`](#valid_from-and-valid_to))
+6. `SERIES_KEY` and/or `OBS_KEY`, in this order (only with the `keys`
    parameter)
-6. Component columns
-7. Custom columns (any position)
+7. Component columns
+8. Custom columns (any position)
 
-The fixed columns (1–5) MUST appear in this order, without gaps between those
+The fixed columns (1–6) MUST appear in this order, without gaps between those
 present.
 
 Component columns:
@@ -196,13 +200,47 @@ message as Merge.
 
 The semantics of each action are described in [Data actions](#data-actions).
 
+### `VALID_FROM` and `VALID_TO`
+
+**Headers:** `VALID_FROM`, `VALID_TO`.
+
+These columns hold the validity time span of the dataset to which the row
+belongs, i.e. the period during which the information in the dataset is or
+was valid in the data source (the data set properties `validFrom` and
+`validTo` of the SDMX Information Model).
+
+- Senders MUST include these columns in responses to queries with the
+  `includeHistory` parameter, and SHOULD include them in responses to queries
+  with the `asOf` parameter (see
+  [Dataset actions in web service responses](#dataset-actions-in-web-service-responses)).
+  Senders MAY include them in other messages.
+- If present, both columns MUST be present, `VALID_FROM` first, directly
+  after `ACTION` (or after the structure identification if `ACTION` is
+  absent).
+
+**Content:**
+
+- `VALID_FROM`: the inclusive start of the validity time span.
+- `VALID_TO`: the inclusive end of the validity time span.
+- Values are ISO 8601 date-times (as `xs:dateTime`), e.g.
+  `2024-03-01T09:00:00Z`. They are not localised.
+- An empty `VALID_FROM` means that the start of the validity time span is not
+  indicated. An empty `VALID_TO` means that the validity time span has no
+  end, i.e. the information is still valid.
+- Rows with the same structure, action and validity time span belong to the
+  same dataset. A message can thus contain several datasets with different
+  validity time spans, e.g. one per version of the data with
+  `includeHistory`.
+
 ### `SERIES_KEY` and `OBS_KEY`
 
 **Headers:** `SERIES_KEY`, `OBS_KEY`.
 
 Present only when requested through the [`keys`](#optional-parameters)
-parameter, directly after `ACTION` (or after the structure identification if
-`ACTION` is absent). If both are present, `SERIES_KEY` comes first.
+parameter, directly after `ACTION` and the
+[validity columns](#valid_from-and-valid_to) (or after the structure
+identification if those are absent). If both are present, `SERIES_KEY` comes
+first.
 
 **Content:**
 
@@ -498,10 +536,12 @@ The following is RECOMMENDED[^bc] for responses to GET data queries:
 4. With `includeHistory`: a number of datasets with Delete, Replace or Merge
    actions, each limited in its validity time span, that allow replicating
    exactly the same point-in-time data contents as previously stored in the
-   queried data source.
+   queried data source. The validity time span of each dataset is given in
+   the [`VALID_FROM` and `VALID_TO`](#valid_from-and-valid_to) columns.
 5. With `asOf`: recommendations 1 and 2 apply depending on the other
    parameters. In addition, the returned dataset SHOULD have its validity time
-   span limited to the point in time requested in `asOf`.
+   span limited to the point in time requested in `asOf`, i.e. both
+   `VALID_FROM` and `VALID_TO` contain that point in time.
 
 ## HTTP integration
 
@@ -675,6 +715,28 @@ header `application/vnd.sdmx.data+csv; version=2.1.0`.
     STRUCTURE,STRUCTURE_ID,ACTION,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_1
     dataflow,ESTAT:NA_MAIN(1.6.0),M,A,B,2014-01,12.4,X
     dataflow,ESTAT:NA_MAIN(1.6.0),R,A,B,2014-02,10.8,Y
+    ```
+
+??? example "Data history: response to a query with `includeHistory=true`"
+
+    ```csv
+    STRUCTURE,STRUCTURE_ID,ACTION,VALID_FROM,VALID_TO,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_1
+    dataflow,ESTAT:NA_MAIN(1.6.0),R,2024-01-15T09:00:00Z,2024-03-01T08:59:59Z,A,B,2014-01,12.4,P
+    dataflow,ESTAT:NA_MAIN(1.6.0),R,2024-01-15T09:00:00Z,2024-03-01T08:59:59Z,A,B,2014-02,10.8,P
+    dataflow,ESTAT:NA_MAIN(1.6.0),R,2024-03-01T09:00:00Z,,A,B,2014-01,12.5,A
+    dataflow,ESTAT:NA_MAIN(1.6.0),R,2024-03-01T09:00:00Z,,A,B,2014-02,10.8,A
+    ```
+
+    The message contains two datasets: the data as first published, valid
+    until the revision of 1 March 2024, and the revised data, valid since then
+    (the empty `VALID_TO` indicates that they are still valid).
+
+??? example "Data at a point in time: response to a query with `asOf=2024-02-01T00:00:00Z`"
+
+    ```csv
+    STRUCTURE,STRUCTURE_ID,ACTION,VALID_FROM,VALID_TO,DIM_1,DIM_2,DIM_3,OBS_VALUE,ATTR_1
+    dataflow,ESTAT:NA_MAIN(1.6.0),R,2024-02-01T00:00:00Z,2024-02-01T00:00:00Z,A,B,2014-01,12.4,P
+    dataflow,ESTAT:NA_MAIN(1.6.0),R,2024-02-01T00:00:00Z,2024-02-01T00:00:00Z,A,B,2014-02,10.8,P
     ```
 
 ??? example "Data for a non-versioned data structure definition"
