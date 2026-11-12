@@ -330,7 +330,7 @@ into several values.
 | `~` | Switched off: the dimension is not relevant for this row (see [Data actions](#data-actions)) | Dimensions |
 | `NaN` | Intentionally missing value | Measures and attributes of type float or double |
 | `#N/A` | Intentionally missing value | Measures and attributes of all other types |
-| `-` (or any valid value) | Marks a value to be deleted in a _Delete_ row | Measures and attributes |
+| `-` (or any valid or intentionally missing value) | Marks a value to be deleted in a _Delete_ row | Measures and attributes |
 
 Intentionally missing values MUST be used to indicate observations,
 attributes or reference metadata values that are deliberately missing, even
@@ -425,7 +425,8 @@ detail provided in the message.
   values allows bulk deletions.
 - Partially omitting non-dimension values restricts the deletion to the
   measure, attribute or data-related reference metadata values that are
-  present. Instead of real values, any valid value MAY be used, e.g. `-`.
+  present. Instead of real values, any valid or intentionally missing value
+  MAY be used, e.g. `-`.
 - This allows deleting all dataflow data, slices of observations for dimension
   groups such as time series, single observations, or individual measure,
   attribute and data-related reference metadata values.
